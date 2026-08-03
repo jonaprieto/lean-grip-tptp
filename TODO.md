@@ -5,10 +5,23 @@ boundaries and preserves formula text even when the formula language is not yet 
 The grammar work below is deliberately incremental: each stage must be useful, testable,
 and releasable before the next language family is added.
 
-The reference is the [TPTP language documentation](https://tptp.org/UserDocs/TPTPLanguage/TPTPLanguage.shtml),
-especially its [BNF](https://tptp.org/UserDocs/TPTPLanguage/SyntaxBNF.html) and
-[ANTLR grammar](https://tptp.org/UserDocs/TPTPLanguage/TPTP.g4). The implementation must
-not silently treat one parser as a complete implementation of every TPTP dialect.
+## References
+
+- [TPTP Language](https://tptp.org/UserDocs/TPTPLanguage/TPTPLanguage.shtml): language
+  hierarchy, types, arithmetic, higher-order features, and non-classical forms.
+- [TPTP BNF](https://tptp.org/UserDocs/TPTPLanguage/SyntaxBNF.html): authoritative syntax
+  productions and precedence.
+- [TPTP ANTLR grammar](https://tptp.org/UserDocs/TPTPLanguage/TPTP.g4): an independent
+  executable grammar useful for differential checks.
+- [Problem format guide](https://tptp.org/UserDocs/QuickGuide/Problems.html) and
+  [derivation format guide](https://tptp.org/UserDocs/QuickGuide/Derivations.html):
+  annotated formula and TSTP expectations.
+- [prop-pack](https://github.com/jonaprieto/prop-pack): pinned local regression corpus.
+- [Grip](https://github.com/jonaprieto/lean-grip): parser combinators and positioned errors.
+- OATP: first integration consumer and source of recorded prover-output fixtures.
+
+The implementation must not silently treat one parser as a complete implementation of every
+TPTP dialect.
 
 ## Rules for every stage
 
@@ -23,6 +36,39 @@ not silently treat one parser as a complete implementation of every TPTP dialect
   counts so corpus drift is visible.
 - Add a renderer only when its invariants are defined; otherwise retain the original text.
 - Audit proof axioms, style, `git diff --check`, and the complete test suite in CI.
+
+## Deliverables for each stage
+
+- A documented AST and public module boundary for the dialect.
+- Total Grip-backed parser entry points with positioned errors.
+- A lossless source representation or a proven canonical renderer.
+- Separate validation/type-checking functions where syntax alone is insufficient.
+- Positive official fixtures and negative fixtures for every new production family.
+- Corpus results recorded by dialect, including accepted, rejected, and intentionally raw
+  statements.
+- Examples showing the public API and an OATP integration point where applicable.
+- Properties for binding, substitution, arity, precedence, and parse/render round trips.
+- Updated README scope, changelog/release notes, and CI coverage.
+
+No stage is complete when it merely compiles or accepts one example.
+
+## Quality-assurance gates
+
+Every pull request must pass:
+
+1. `lake build` for all libraries, examples, tests, and properties.
+2. Unit tests for successful parses, malformed input, comments, Unicode, and error positions.
+3. Official fixture tests and the pinned corpus regression job.
+4. Parse/render/parse properties wherever canonical rendering is supported.
+5. Independent differential checks against the TPTP ANTLR grammar or another parser for
+   accepted/rejected syntax and selected structural facts.
+6. Scope, arity, declaration-order, and type checks for the validation layer.
+7. Axiom, total-parser, style, formatting, and documentation checks.
+8. OATP integration tests for any API consumed outside `lean-tptp`.
+
+The release checklist additionally requires a clean worktree, a pinned dependency/corpus
+revision, a tagged version, and a green remote CI run. Unsupported constructs must produce a
+clear error or remain available through the raw envelope; they must never be silently dropped.
 
 ## P0 — complete FOF and CNF
 
@@ -156,4 +202,3 @@ test strategy must progress from easiest to hardest:
 
 Do not advance a stage because the parser builds. Advance it when its exit criterion and
 verification evidence are present.
-
