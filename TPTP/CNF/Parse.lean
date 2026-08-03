@@ -41,12 +41,21 @@ private def literal : P Literal :=
 private def separator : P Unit :=
   (fun _ => ()) <$> (GParser.ch '|' <* trivia)
 
+private def normalize (clause : Clause) : Clause :=
+  match clause.literals.toList with
+  | [Literal.positive (.predicate symbol arguments)] =>
+      if symbol.raw == "$false" && arguments.isEmpty then
+        { literals := #[] }
+      else
+        clause
+  | _ => clause
+
 private def clauseParser : P Clause :=
   GParser.fix fun recursive =>
     let parenthesized : P Clause :=
       GParser.ch '(' *> trivia *> recursive <* GParser.ch ')'
     let disjunction : P Clause :=
-      GParser.map (fun (first, rest) => { literals := (first :: rest).toArray })
+      GParser.map (fun (first, rest) => normalize { literals := (first :: rest).toArray })
         (GParser.map2 Prod.mk literal (GParser.many (separator *> literal)))
     GParser.chooseG parenthesized [disjunction]
 

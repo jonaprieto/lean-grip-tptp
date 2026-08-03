@@ -10,6 +10,7 @@ import TPTP.FirstOrder.Render
 import TPTP.FOF
 import TPTP.FOF.Parse
 import TPTP.FOF.Render
+import TPTP.FOF.Validate
 import TPTP.CNF
 import TPTP.CNF.Parse
 import TPTP.CNF.Render

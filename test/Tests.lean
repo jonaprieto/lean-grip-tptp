@@ -83,6 +83,9 @@ private def checkFOF : IO Unit := do
       (.atom (.predicate { raw := "p" } #[.variable "X"]))
       (.atom (.predicate { raw := "q" } #[.variable "X"])))
   check (formula == expected) "complete FOF formula shape"
+  match FOF.validate formula with
+  | .ok () => pure ()
+  | .error error => throw (IO.userError s!"bound FOF rejected: {error}")
   let rendered := formula.render
   check (rendered == "! [X] : ((p(X) => q(X)))") "canonical FOF rendering"
   match FOF.parseFormulaString rendered with
@@ -116,6 +119,19 @@ private def checkFOF : IO Unit := do
     match FOF.parseFormulaString input with
     | .ok _ => throw (IO.userError s!"FOF accepted invalid proposition `{input}`")
     | .error _ => pure ()
+  let unbound : FOF.Formula :=
+    .atom (.predicate { raw := "p" } #[.variable "X"])
+  match FOF.validate unbound with
+  | .error (.unboundVariable "X") => pure ()
+  | _ => throw (IO.userError "FOF accepted an unbound variable")
+  let duplicate : FOF.Formula := .forall #["X", "X"] .truth
+  match FOF.validate duplicate with
+  | .error (.duplicateBinder "X") => pure ()
+  | _ => throw (IO.userError "FOF accepted a duplicate binder")
+  let empty : FOF.Formula := .forall #[] .truth
+  match FOF.validate empty with
+  | .error .emptyBinder => pure ()
+  | _ => throw (IO.userError "FOF accepted an empty binder")
 
 private def checkCNF : IO Unit := do
   let source := "(p(a) | ~q(a) | r(a) != s(a))"
@@ -140,6 +156,11 @@ private def checkCNF : IO Unit := do
   match CNF.parseFormulaString rendered with
   | .ok reparsed => check (reparsed == clause) "CNF parse/render/parse"
   | .error error => throw (IO.userError (error.pretty rendered.toUTF8))
+  let empty ← match CNF.parseFormulaString "$false" with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty "$false".toUTF8))
+  check empty.literals.isEmpty "CNF empty clause"
+  check (empty.render == "$false") "CNF empty clause rendering"
   let statement : Statement :=
     { kind := .cnf, name := .bare "goal", role := .conjecture, formula := source }
   match CNF.parseStatementFormula statement with
