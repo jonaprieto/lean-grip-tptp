@@ -24,7 +24,8 @@ require tptp from git
   @ "main"
 ```
 
-Parse a complete document or one statement. Both APIs return Grip's positioned errors:
+Parse a complete document or one statement. The envelope API returns Grip's positioned
+errors, while typed formula parsers additionally check the statement kind:
 
 ```lean
 import TPTP
@@ -36,6 +37,11 @@ example : Except Grip.ParseError TPTP.Document :=
 
 example : Except Grip.ParseError TPTP.Statement :=
   TPTP.parseStatementString "cnf(goal, conjecture, p(a) | ~q(a))."
+
+example : Except TPTP.FormulaError TPTP.FOF.Formula :=
+  match TPTP.parseStatementString "fof(goal, conjecture, ! [X] : p(X))." with
+  | .ok statement => TPTP.FOF.parseStatementFormula statement
+  | .error error => .error (.syntax error)
 ```
 
 Run the included example locally:
@@ -44,16 +50,28 @@ Run the included example locally:
 lake exe demo
 ```
 
-Run the public [`jonaprieto/prop-pack`](https://github.com/jonaprieto/prop-pack) corpus when
-it is checked out:
+Run the public [`jonaprieto/prop-pack`](https://github.com/jonaprieto/prop-pack) envelope
+corpus when it is checked out:
 
 ```text
 python3 scripts/test-corpus.py ../prop-pack
 ```
 
-The corpus runner discovers `.p`, `.tptp`, and `.tstp` files and feeds them to the same
-total parser used by the library. CI runs the complete `prop-pack` corpus without copying it
-into this package.
+The typed fixture corpus exercises the FOF/CNF ASTs and validators:
+
+```text
+python3 scripts/test-corpus.py --typed test/fixtures
+```
+
+The optional differential check uses E's independent TPTP parser for a conservative common
+subset when `eprover` is installed:
+
+```text
+python3 scripts/test-differential.py test/fixtures/differential
+```
+
+The corpus runner discovers `.p`, `.tptp`, and `.tstp` files. CI runs the complete
+`prop-pack` envelope corpus and the checked-in typed fixtures.
 
 ## What is parsed
 
@@ -67,9 +85,22 @@ The envelope parser is total and accepts the standard statement tags `fof`, `cnf
 - UTF-8 source text through the `String` convenience API.
 
 The formula body is intentionally preserved as source text, so a consumer does not lose
-syntax that this library does not interpret. The optional `TPTP.Formula` parser provides a
-small first-order AST for atoms, terms, connectives, and quantifiers; it is useful for the
-common `fof`/`cnf` fragment and is not a claim to be a complete higher-order TPTP semantics.
+syntax that this library does not interpret. The typed modules provide shared first-order
+terms/atoms plus FOF formulas and CNF clauses:
+
+```lean
+import TPTP
+
+example : Except Grip.ParseError TPTP.FOF.Formula :=
+  TPTP.FOF.parseFormulaString "! [X] : (p(X) => q(X))"
+
+example : Except Grip.ParseError TPTP.CNF.Clause :=
+  TPTP.CNF.parseFormulaString "p(a) | ~(q(a))"
+```
+
+`TPTP.FOF.validate` checks variable scope, empty binders, and duplicate binders. CNF
+variables are implicitly universally quantified; a singleton `$false` body is represented
+as the empty clause.
 
 ```lean
 open TPTP
@@ -84,17 +115,23 @@ process management.
 
 ## Design guarantees
 
-- Parser recursion uses Grip's fuelled `GParser.fix`; parser definitions are not `partial`.
+- Parser recursion uses Grip's fuelled `GParser.fix`; typed parser definitions are not
+  `partial`.
 - Repetition uses Grip's progress-aware graded combinators.
 - Parse failures carry byte position, line, column, and expected-token information.
 - Raw formula and annotation text is retained for round-tripping and downstream parsers.
+- FOF rendering fully parenthesizes binary formulas; FOF/CNF render/parse round trips are
+  tested on the checked-in corpus.
 - The properties target is audited in CI for unexpected proof axioms.
 
 ## Scope
 
-This package parses the source envelope and a deliberately small first-order formula subset.
-It does not resolve `include` paths, execute prover output, reconstruct proofs, or validate
-the full typed/higher-order TPTP grammar. Those belong in consumers or future typed modules.
+The typed FOF/CNF implementation follows the untyped productions in the official TPTP BNF
+revision v9.3.0.1: terms, atoms, equality/inequality, all FOF connectives and quantifiers,
+CNF disjunctions, comments, quoted/back-quoted names, defined/system symbols, and numeric
+terms. It does not yet model TFF/THF types, FOFX sequents, non-classical variants, structured
+TSTP annotations, include resolution, symbol declarations, or arity/type checking. Those
+remain available through the raw envelope and are future modules.
 
 ## License
 

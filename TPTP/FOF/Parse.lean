@@ -95,7 +95,7 @@ private def formulaParser : P Formula :=
         else if byte == Ascii.code '?' then
           binder Formula.exists '?' unitFormula
         else if byte == Ascii.lparen then
-          GParser.ch '(' *> trivia *> formula <* GParser.ch ')'
+          GParser.ch '(' *> trivia *> formula <* GParser.ch ')' <* trivia
         else
           atomFormula
     let unitFormula : P Formula :=

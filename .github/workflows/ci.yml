@@ -41,9 +41,13 @@ jobs:
       - name: Audit proof axioms
         run: python3 scripts/check-axioms.py
       - name: Require total parser definitions
-        run: '! rg -n "\\bpartial\\s+(def|theorem)\\b" TPTP/Parse.lean'
+        run: '! rg -n "\\bpartial\\s+(def|theorem)\\b" TPTP/Parse.lean TPTP/FirstOrder/Parse.lean TPTP/FOF/Parse.lean TPTP/CNF/Parse.lean'
       - name: Run tests
         run: lake exe tests
+      - name: Parse typed fixtures
+        run: python3 scripts/test-corpus.py --typed test/fixtures
+      - name: Differential syntax check
+        run: python3 scripts/test-differential.py test/fixtures/differential
       - name: Render demo
         run: lake exe demo > /tmp/tptp-demo.txt
       - run: test -s /tmp/tptp-demo.txt
@@ -82,3 +86,5 @@ jobs:
           build-args: corpus
       - name: Parse prop-pack corpus
         run: python3 scripts/test-corpus.py prop-pack
+      - name: Parse typed fixtures
+        run: python3 scripts/test-corpus.py --typed test/fixtures

@@ -2,7 +2,7 @@ import Lake
 open Lake DSL
 
 package «tptp» where
-  version := v!"0.1.2"
+  version := v!"0.2.0"
   leanOptions := #[⟨`autoImplicit, false⟩, ⟨`relaxedAutoImplicit, false⟩]
 
 require grip from git

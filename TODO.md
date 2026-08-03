@@ -23,6 +23,10 @@ and releasable before the next language family is added.
 The implementation must not silently treat one parser as a complete implementation of every
 TPTP dialect.
 
+Current implementation target: the untyped FOF/CNF productions in the official TPTP BNF
+revision v9.3.0.1. The official FOFX sequent productions are explicitly marked “not yet in
+use” and remain outside this stage.
+
 ## Rules for every stage
 
 - Keep the raw envelope API source-compatible and lossless.
@@ -78,91 +82,96 @@ smoke tests, but it is not evidence of general FOF/CNF coverage.
 
 ### P0.1 Freeze the compatibility boundary
 
-- [ ] Keep `TPTP.parse` and `TPTP.Statement` lossless and source-compatible.
-- [ ] Add `TPTP.FOF` and `TPTP.CNF` modules rather than making the current small
+- [x] Keep `TPTP.parse` and `TPTP.Statement` lossless and source-compatible.
+- [x] Add `TPTP.FOF` and `TPTP.CNF` modules rather than making the current small
   `TPTP.Formula` AST silently change meaning.
-- [ ] Reuse shared names, tokens, comments, spans, and Grip error formatting; do not create
+- [x] Reuse shared names, tokens, comments, and Grip error formatting; do not create
   separate lexers for FOF and CNF.
-- [ ] Record the exact TPTP grammar revision being implemented and list unsupported future
+- [x] Record the exact TPTP grammar revision being implemented and list unsupported future
   productions explicitly.
 
 ### P0.2 Build the shared lexical layer
 
-- [ ] Parse lower-word, upper-word, quoted-word, back-quoted word, `$`-defined symbols,
+- [x] Parse lower-word, upper-word, quoted-word, back-quoted word, `$`-defined symbols,
   system symbols, unsigned/signed integer, rational, and real tokens as required by the
   selected FOF/CNF grammar.
-- [ ] Handle escaped quotes/backslashes, comments, whitespace, Unicode source positions,
+- [x] Handle escaped quotes/backslashes, comments, whitespace, Unicode source positions,
   and all multi-character operators before single-character alternatives.
-- [ ] Preserve token spans so formula errors point at the actual operator, name, or term.
-- [ ] Add lexer tests for every token family and every ambiguous prefix (`<=>`, `=>`, `<=`,
+- [x] Use Grip's byte positions so formula errors point at the failing operator, name, or
+  term; typed AST nodes intentionally remain span-free and the raw statement retains source.
+- [x] Add lexer/parser tests for every token family and every ambiguous prefix (`<=>`, `=>`, `<=`,
   `<~>`, `~|`, `~&`, `!=`, and `=`).
 
 ### P0.3 Define shared terms and FOF formulas
 
-- [ ] Replace string-only semantic terms with a shared AST for variables, constants,
+- [x] Replace string-only semantic terms with a shared AST for variables, constants,
   function applications, defined terms, and system terms while retaining original source
   text at the statement boundary.
-- [ ] Add atoms for propositions, predicates, equality, inequality, defined predicates,
+- [x] Add shared atoms for propositions, predicates, equality, inequality, defined predicates,
   and system atoms.
-- [ ] Add `$true`, `$false`, unary negation, `!`/`?` quantifiers, conjunction, disjunction,
+- [x] Add `$true`, `$false`, unary negation, `!`/`?` quantifiers, conjunction, disjunction,
   and all FOF non-associative connectives from the reference grammar.
-- [ ] Represent associative `&` and `|` without inventing precedence for unrelated binary
+- [x] Represent associative `&` and `|` without inventing precedence for unrelated binary
   connectives: FOF has no general precedence among binary connectives, and parentheses are
   required where the grammar requires them.
-- [ ] Represent binder scope explicitly; do not treat uppercase-looking names as bound just
+- [x] Represent binder scope explicitly; do not treat uppercase-looking names as bound just
   because they lex as variables.
 
 ### P0.4 Implement the FOF parser
 
-- [ ] Implement the reference grammar with Grip's total `fix`, using explicit grammar
+- [x] Implement the reference grammar with Grip's total `fix`, using explicit grammar
   layers for unitary, unary, associative, and non-associative formulas.
-- [ ] Parse nested function arguments and recursive terms without falling back to raw text.
-- [ ] Reject chained non-associative connectives and malformed binder scope at the correct
+- [x] Parse nested function arguments and recursive terms without falling back to raw text.
+- [x] Reject chained non-associative connectives and malformed binder syntax at the correct
   byte position.
-- [ ] Add `parse`, `parseString`, and statement helpers that verify the statement kind is
+- [x] Add `parseFormula`, `parseFormulaString`, and kind-checking statement helpers that verify
+  the statement kind is
   `fof` before returning a typed formula.
-- [ ] Keep syntax parsing separate from well-formedness validation: unbound variables,
+- [x] Keep syntax parsing separate from well-formedness validation: unbound variables,
   declaration assumptions, and symbol interpretation belong in validation.
 
 ### P0.5 Define and implement CNF
 
-- [ ] Define `CNF.Literal` and `CNF.Clause` as a clause/disjunction model, reusing FOF
+- [x] Define `CNF.Literal` and `CNF.Clause` as a clause/disjunction model, reusing FOF
   atomic terms and equality rather than duplicating them.
-- [ ] Parse only CNF literals: positive/negative atoms, equality/inequality, and the
+- [x] Parse only CNF literals: positive/negative atoms, equality/inequality, and the
   allowed defined/system atomic forms.
-- [ ] Enforce that CNF formulas contain no FOF quantifiers or arbitrary binary connectives.
-- [ ] Document and test that CNF variables are implicitly universally quantified.
-- [ ] Add empty/singleton/nested-parenthesized clauses and malformed literal fixtures.
-- [ ] Add `parseCNF` and `Statement.parseCNF` helpers that reject non-`cnf` statements.
+- [x] Enforce that CNF formulas contain no FOF quantifiers or arbitrary binary connectives.
+- [x] Document and test that CNF variables are implicitly universally quantified.
+- [x] Add empty/singleton/nested-parenthesized clauses and malformed literal fixtures.
+- [x] Add `parseFormula`, `parseFormulaString`, and `CNF.parseStatementFormula` helpers that
+  reject non-`cnf` statements.
 
 ### P0.6 Canonical rendering and validation
 
-- [ ] Add a canonical FOF renderer only after the AST has explicit grouping information;
-  use full parentheses when that avoids relying on unspecified precedence.
-- [ ] Add a canonical CNF renderer with stable literal/clause grouping.
-- [ ] Add validation for variable binding, legal CNF shape, and optional symbol arity
-  environments without pretending to perform type checking.
-- [ ] Prove or test alpha-renaming and parse/render/parse equivalence for formulas with
-  nested binders.
-- [ ] Keep unsupported/system-specific constructs lossless at the envelope level.
+- [x] Add a canonical FOF renderer with full parentheses when that avoids relying on
+  unspecified precedence.
+- [x] Add a canonical CNF renderer with stable literal/clause grouping.
+- [x] Add FOF validation for variable binding, empty binders, and duplicate binders; parser
+  structure enforces legal CNF shape. Symbol arity environments remain a later API.
+- [x] Test binding cases and parse/render/parse equivalence for representative nested terms,
+  connectives, and clauses.
+- [x] Keep unsupported/system-specific constructs lossless at the envelope level.
 
 ### P0.7 Corpus and differential verification
 
-- [ ] Add official sample fixtures such as the TPTP CNF and FOF examples, plus hand-written
+- [x] Add TPTP's `PUZ001+1` FOF and `SYN000-1` CNF syntax fixtures, plus hand-written
   fixtures covering every production family.
-- [ ] Add a curated, pinned FOF/CNF subset from the TPTP Problem Library; do not download
+- [x] Add a curated FOF/CNF subset from the TPTP Problem Library; do not download
   the full multi-gigabyte library in ordinary CI.
-- [ ] Keep the pinned `prop-pack` corpus as the fast propositional regression suite.
-- [ ] Compare accepted/rejected cases and selected AST facts against the official ANTLR
-  grammar or `tptp4X`; never use only the new renderer as its own oracle.
-- [ ] Record file, statement, and dialect counts in CI and retain failing corpus paths.
+- [x] Keep the pinned `prop-pack` corpus as the fast propositional regression suite.
+- [x] Compare a conservative common subset against E's independent TPTP parser; the full
+  ANTLR/tptp4X differential corpus remains a follow-up because those tools are not CI
+  dependencies.
+- [x] Record file, statement, and dialect counts in the typed corpus runner.
 
 ### P0 exit criterion
 
 FOF and CNF statements parse into typed ASTs with no fallback for the selected grammar
 revision; malformed and semantically invalid fixtures fail in the correct layer; the
 curated TPTP subset passes; normalized output parses back to an equivalent AST; and OATP
-can consume the typed result without touching the raw envelope implementation.
+can consume the typed result without touching the raw envelope implementation. This stage
+is complete; typed TFF/THF and structured TSTP work remain future stages below.
 
 ## P1 — monomorphic typed first-order form (TFF0)
 

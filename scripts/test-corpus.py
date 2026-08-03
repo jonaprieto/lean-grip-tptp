@@ -5,10 +5,12 @@ import pathlib
 import subprocess
 import sys
 
-if len(sys.argv) != 2:
-    raise SystemExit("usage: scripts/test-corpus.py PATH")
+typed = len(sys.argv) > 1 and sys.argv[1] == "--typed"
+paths = sys.argv[2:] if typed else sys.argv[1:]
+if len(paths) != 1:
+    raise SystemExit("usage: scripts/test-corpus.py [--typed] PATH")
 
-root = pathlib.Path(sys.argv[1])
+root = pathlib.Path(paths[0])
 if not root.is_dir():
     raise SystemExit(f"not a directory: {root}")
 
@@ -20,4 +22,7 @@ files = sorted(
 if not files:
     raise SystemExit(f"no TPTP files under: {root}")
 
-subprocess.run(["lake", "exe", "corpus", "--", *(str(path) for path in files)], check=True)
+arguments = ["lake", "exe", "corpus", "--"]
+if typed:
+    arguments.append("--typed")
+subprocess.run([*arguments, *(str(path) for path in files)], check=True)
