@@ -62,8 +62,19 @@ private def checkErrors : IO Unit := do
   | .ok _ => throw (IO.userError "malformed formula accepted")
   | .error _ => pure ()
 
+private def checkComments : IO Unit := do
+  let source := "fof(line, axiom, p(a) % ) , ignored\n, inference(foo, [status(thm)]))."
+  let block := "fof(block, axiom, p(a) /* ) , ignored */ , inference(foo, [status(thm)]))."
+  for input in [source, block] do
+    match parseStatementString input with
+    | .ok statement =>
+        check (statement.annotations == some "inference(foo, [status(thm)])")
+          "comment-aware annotation split"
+    | .error error => throw (IO.userError (error.pretty input.toUTF8))
+
 def main : IO Unit := do
   checkDocument
   checkFormula
   checkErrors
+  checkComments
   IO.println "TPTP tests: ok"

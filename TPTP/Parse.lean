@@ -24,7 +24,7 @@ private def isNameByte (byte : UInt8) : Bool :=
 
 private def isDelimiter (byte : UInt8) : Bool :=
   byte == 40 || byte == 41 || byte == 91 || byte == 93 || byte == 123 || byte == 125 ||
-    byte == 34 || byte == 39
+    byte == 34 || byte == 39 || byte == Ascii.code '%' || byte == Ascii.slash
 
 private def whitespace : GParser conditional Unit :=
   (fun _ => ()) <$> GParser.satisfy Ascii.isWs
@@ -72,6 +72,19 @@ private def rawGroup (opener closer : Char) (body : GParser conditional String) 
   GParser.map (fun value => String.ofList [opener] ++ value ++ String.ofList [closer])
     (GParser.ch opener *> body <* GParser.ch closer)
 
+private def rawLineComment : GParser conditional String :=
+  GParser.capture (GParser.byte (Ascii.code '%') *> GParser.takeWhile (· != Ascii.lf))
+
+private def rawBlockComment : GParser conditional String :=
+  GParser.capture (GParser.string "/*" *>
+    GParser.manyTill (GParser.satisfy (fun _ => true)) (GParser.string "*/"))
+
+private def rawText : GParser conditional String :=
+  GParser.capture (GParser.takeWhile1 (fun value => !isDelimiter value))
+
+private def rawSlash : GParser conditional String :=
+  GParser.capture (GParser.byte Ascii.slash)
+
 private def rawPiece (body : GParser conditional String) : GParser conditional String :=
   GParser.dispatch fun byte =>
     if byte == 40 then rawGroup '(' ')' body
@@ -79,45 +92,80 @@ private def rawPiece (body : GParser conditional String) : GParser conditional S
     else if byte == 123 then rawGroup '{' '}' body
     else if byte == 34 then quotedPiece 34 (quotedBody 34)
     else if byte == 39 then quotedPiece 39 (quotedBody 39)
-    else GParser.capture (GParser.takeWhile1 (fun value => !isDelimiter value))
+    else if byte == Ascii.code '%' then rawLineComment
+    else if byte == Ascii.slash then GParser.alt rawBlockComment rawSlash
+    else rawText
 
 private def rawBody : GParser conditional String :=
   GParser.fix fun body => String.join <$> GParser.many1 (rawPiece body)
 
+private inductive Comment where
+  | line
+  | block
+
 private def splitAnnotation (body : String) : String × Option String :=
-  let rec go : List Char → Nat → Nat → Nat → Option Char → Bool → List Char →
-      String × Option String
-    | [], _, _, _, _, _, formula => (String.ofList formula.reverse, none)
-    | character :: rest, round, square, curly, quote, escaped, formula =>
+  let rec go (input : List Char) (round square curly : Nat) (quote : Option Char)
+      (escaped : Bool) (comment : Option Comment) (formula : List Char) :
+      String × Option String :=
+    match input with
+    | [] => (String.ofList formula.reverse, none)
+    | character :: rest =>
         match quote with
         | some delimiter =>
-            if escaped then go rest round square curly quote false (character :: formula)
+            if escaped then go rest round square curly quote false comment (character :: formula)
             else if character == '\\' then
-              go rest round square curly quote true (character :: formula)
+              go rest round square curly quote true comment (character :: formula)
             else if character == delimiter then
-              go rest round square curly none false (character :: formula)
+              go rest round square curly none false comment (character :: formula)
             else
-              go rest round square curly quote false (character :: formula)
+              go rest round square curly quote false comment (character :: formula)
         | none =>
-            if character == '"' || character == '\'' then
-              go rest round square curly (some character) false (character :: formula)
-            else if character == '(' then
-              go rest (round + 1) square curly none false (character :: formula)
-            else if character == ')' && round > 0 then
-              go rest (round - 1) square curly none false (character :: formula)
-            else if character == '[' then
-              go rest round (square + 1) curly none false (character :: formula)
-            else if character == ']' && square > 0 then
-              go rest round (square - 1) curly none false (character :: formula)
-            else if character == '{' then
-              go rest round square (curly + 1) none false (character :: formula)
-            else if character == '}' && curly > 0 then
-              go rest round square (curly - 1) none false (character :: formula)
-            else if character == ',' && round == 0 && square == 0 && curly == 0 then
-              (String.ofList formula.reverse, some (String.ofList rest))
-            else
-              go rest round square curly none false (character :: formula)
-  go body.toList 0 0 0 none false []
+            match comment with
+            | some .line =>
+                go rest round square curly none false
+                  (if character == '\n' then none else some .line) (character :: formula)
+            | some .block =>
+                match rest with
+                | [] => go [] round square curly none false (some .block) (character :: formula)
+                | first :: tail =>
+                    if character == '*' && first == '/' then
+                      go tail round square curly none false none ('/' :: '*' :: formula)
+                    else
+                      go (first :: tail) round square curly none false (some .block)
+                        (character :: formula)
+            | none =>
+                if character == '"' || character == '\'' then
+                  go rest round square curly (some character) false none (character :: formula)
+                else if character == '%' then
+                  go rest round square curly none false (some .line) (character :: formula)
+                else if character == '/' then
+                  match rest with
+                  | [] => go [] round square curly none false none (character :: formula)
+                  | first :: tail =>
+                      if first == '*' then
+                        go tail round square curly none false (some .block)
+                          ('*' :: '/' :: formula)
+                      else
+                        go (first :: tail) round square curly none false none (character :: formula)
+                else if character == '(' then
+                  go rest (round + 1) square curly none false none (character :: formula)
+                else if character == ')' && round > 0 then
+                  go rest (round - 1) square curly none false none (character :: formula)
+                else if character == '[' then
+                  go rest round (square + 1) curly none false none (character :: formula)
+                else if character == ']' && square > 0 then
+                  go rest round (square - 1) curly none false none (character :: formula)
+                else if character == '{' then
+                  go rest round square (curly + 1) none false none (character :: formula)
+                else if character == '}' && curly > 0 then
+                  go rest round square (curly - 1) none false none (character :: formula)
+                else if character == ',' && round == 0 && square == 0 && curly == 0 then
+                  (String.ofList formula.reverse, some (String.ofList rest))
+                else
+                  go rest round square curly none false none (character :: formula)
+  termination_by input.length
+  decreasing_by all_goals simp_all <;> omega
+  go body.toList 0 0 0 none false none []
 
 private def kind : GParser conditional Kind :=
   Kind.ofString <$> GParser.capture (GParser.takeWhile1 isNameByte)
