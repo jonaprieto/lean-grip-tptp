@@ -363,6 +363,8 @@ private def checkBinderTypes (signature : Signature)
       variables.toList.mapM fun binder => do
         let type := binder.type.getD (atom "$i")
         let _ ← typeKnown signature type
+        if isKind type then
+          throw (.invalidType "TF0 variables cannot have type $tType")
         pure (binder.name, type)
 
 private partial def checkFormula (signature : Signature)

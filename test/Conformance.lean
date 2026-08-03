@@ -195,6 +195,7 @@ private def tffFormulaAccepted : List (String × String) := [
 
 private def tffFormulaRejected : List (String × String) := [
   ("polymorphic binder", "!>[A:$tType] : p"),
+  ("type variable in TF0", "![A:$tType] : $true"),
   ("boolean term tuple", "[a, b] = c"),
   ("conditional term", "$ite(p, a, b) = a"),
   ("subtype", "a << b"),
