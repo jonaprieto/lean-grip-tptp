@@ -51,8 +51,18 @@ private def quotedBody (quote : UInt8) : GParser flexible String :=
     (GParser.capture (GParser.takeWhile1 (visible quote)))
     (escaped quote))
 
-private def quoted (quote : UInt8) : P Symbol :=
-  Symbol.mk <$> (GParser.capture (GParser.byte quote *> quotedBody quote <* GParser.byte quote)
+private def quotedBodyNonempty (quote : UInt8) : GParser conditional String :=
+  String.join <$> GParser.many1 (GParser.alt
+    (GParser.capture (GParser.takeWhile1 (visible quote)))
+    (escaped quote))
+
+private def singleQuoted : P Symbol :=
+  Symbol.mk <$> (GParser.capture (GParser.byte Ascii.apostrophe *>
+    quotedBodyNonempty Ascii.apostrophe <* GParser.byte Ascii.apostrophe)
+    <* trivia)
+
+private def distinctObject : P Symbol :=
+  Symbol.mk <$> (GParser.capture (GParser.byte 34 *> quotedBody 34 <* GParser.byte 34)
     <* trivia)
 
 private def wordTail : UInt8 → Bool := fun byte => Ascii.isAlphaNum byte || byte == 95
@@ -136,14 +146,14 @@ private def number : P Symbol :=
 def symbol : P Symbol :=
   GParser.dispatch fun byte =>
     if byte == Ascii.code '$' then dollarWord
-    else if byte == Ascii.apostrophe then quoted Ascii.apostrophe
+    else if byte == Ascii.apostrophe then singleQuoted
     else if byte == 96 then backquoted
-    else if byte == 34 then quoted 34
+    else if byte == 34 then distinctObject
     else if Ascii.isLower byte then lowerWord
     else number
 
 private def predicateSymbol : P Symbol :=
-  GParser.chooseG dollarWord [quoted Ascii.apostrophe, backquoted, lowerWord]
+  GParser.chooseG dollarWord [singleQuoted, backquoted, lowerWord]
 
 def variableParser : P String := upperWord
 

@@ -14,6 +14,7 @@ import TPTP.FOF.Validate
 import TPTP.CNF
 import TPTP.CNF.Parse
 import TPTP.CNF.Render
+import TPTP.CNF.Validate
 import TPTP.Parse
 import TPTP.Render
 

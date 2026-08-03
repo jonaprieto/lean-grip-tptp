@@ -160,10 +160,14 @@ smoke tests, but it is not evidence of general FOF/CNF coverage.
 - [x] Add a curated FOF/CNF subset from the TPTP Problem Library; do not download
   the full multi-gigabyte library in ordinary CI.
 - [x] Keep the pinned `prop-pack` corpus as the fast propositional regression suite.
-- [x] Compare a conservative common subset against E's independent TPTP parser; the full
-  ANTLR/tptp4X differential corpus remains a follow-up because those tools are not CI
-  dependencies.
+- [x] Compare a conservative common subset against E's independent TPTP parser; CI installs
+  E so this gate cannot silently skip. The full ANTLR/tptp4X differential corpus remains a
+  follow-up because those tools are not CI dependencies.
 - [x] Record file, statement, and dialect counts in the typed corpus runner.
+- [x] Check every supported production family with positive and malformed negative cases in
+  `test/Conformance.lean`.
+- [x] Record the target BNF revision and conformance boundary in `notes/TPTP-Syntax-BNF.md` and
+  `CONFORMANCE.md`.
 
 ### P0 exit criterion
 

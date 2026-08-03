@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Check a conservative TPTP fixture subset with E when it is installed."""
+"""Compare the Lean parser with E on a conservative common subset."""
 
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -9,15 +10,32 @@ import sys
 if len(sys.argv) != 2:
     raise SystemExit("usage: scripts/test-differential.py PATH")
 
-prover = shutil.which("eprover")
-if prover is None:
-    print("differential syntax check: skipped (eprover is not installed)")
-    raise SystemExit(0)
-
 root = pathlib.Path(sys.argv[1])
 files = sorted(path for path in root.rglob("*") if path.is_file())
 if not files:
     raise SystemExit(f"no differential fixtures under: {root}")
+
+typed = subprocess.run(
+    ["lake", "exe", "corpus", "--", "--typed", *(str(path) for path in files)],
+    check=False,
+    text=True,
+    capture_output=True,
+)
+sys.stdout.write(typed.stdout)
+if typed.returncode:
+    sys.stderr.write(typed.stderr)
+    raise SystemExit("Lean rejected a differential fixture")
+counts = re.search(r"TPTP typed corpus: \d+ files, (\d+) FOF, (\d+) CNF", typed.stdout)
+if counts is None or int(counts.group(1)) + int(counts.group(2)) == 0:
+    raise SystemExit("differential fixtures contain no typed FOF/CNF statements")
+
+prover = shutil.which("eprover")
+if prover is None:
+    print("differential syntax check: Lean accepted; E comparison skipped")
+    raise SystemExit(0)
+
+version = subprocess.run([prover, "--version"], check=True, text=True, capture_output=True)
+version_line = version.stdout.splitlines()[0] if version.stdout else "unknown version"
 
 for path in files:
     result = subprocess.run(
@@ -29,4 +47,4 @@ for path in files:
         sys.stderr.write(result.stderr)
         raise SystemExit(f"eprover rejected {path}")
 
-print(f"differential syntax check: {len(files)} files accepted by eprover")
+print(f"differential syntax check: {len(files)} files accepted by Lean and {version_line}")

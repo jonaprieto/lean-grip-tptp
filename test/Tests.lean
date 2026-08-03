@@ -143,7 +143,7 @@ private def checkFOF : IO Unit := do
   | _ => throw (IO.userError "FOF accepted an unknown defined symbol")
   let missingArguments : FOF.Formula := .atom (.predicate { raw := "$less" } #[])
   match FOF.validate missingArguments with
-  | .error (.invalidDefinedUse "$less") => pure ()
+  | .error (.invalidDefinedArity "$less" 0) => pure ()
   | _ => throw (IO.userError "FOF accepted a defined predicate without arguments")
 
 private def checkCNF : IO Unit := do

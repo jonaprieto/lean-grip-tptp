@@ -34,12 +34,20 @@ private def checkTypedFile (path : String) : IO (Nat × Nat) := do
         match statement.kind with
         | .fof =>
             match FOF.parseStatementFormula statement with
-            | .ok _ => fof := fof + 1
+            | .ok formula =>
+                match FOF.validate formula with
+                | .ok () => fof := fof + 1
+                | .error error =>
+                    throw (IO.userError s!"{path}: {statement.name}: {error}")
             | .error error =>
                 throw (IO.userError s!"{path}: {formulaError statement error}")
         | .cnf =>
             match CNF.parseStatementFormula statement with
-            | .ok _ => cnf := cnf + 1
+            | .ok clause =>
+                match CNF.validate clause with
+                | .ok () => cnf := cnf + 1
+                | .error error =>
+                    throw (IO.userError s!"{path}: {statement.name}: {error}")
             | .error error =>
                 throw (IO.userError s!"{path}: {formulaError statement error}")
         | _ => pure ()

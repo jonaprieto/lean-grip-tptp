@@ -1,6 +1,6 @@
 # TPTP syntax BNF reference
 
-Target revision: **v9.3.0.1**.
+Target revision: **v9.3.0.1** (recorded from the official header on 2026-08-03).
 
 The authoritative source is the [official TPTP syntax BNF][bnf]. The executable
 [ANTLR grammar][antlr] is kept as an independent syntax reference. This note records
@@ -15,10 +15,10 @@ replacement for the complete specification.
 <fof_binary_formula> ::= <fof_binary_nonassoc> | <fof_binary_assoc>
 <fof_binary_nonassoc> ::= <fof_unit_formula> <nonassoc_connective> <fof_unit_formula>
 <fof_binary_assoc> ::= <fof_or_formula> | <fof_and_formula>
-<fof_or_formula> ::= <fof_unit_formula> | <fof_unit_formula> |
-                     <fof_or_formula> | <fof_unit_formula>
-<fof_and_formula> ::= <fof_unit_formula> & <fof_unit_formula> |
-                      <fof_and_formula> & <fof_unit_formula>
+<fof_or_formula> ::= <fof_unit_formula> "|" <fof_unit_formula> |
+                     <fof_or_formula> "|" <fof_unit_formula>
+<fof_and_formula> ::= <fof_unit_formula> "&" <fof_unit_formula> |
+                      <fof_and_formula> "&" <fof_unit_formula>
 <fof_unary_formula> ::= <unary_connective> <fof_unit_formula> |
                         <fof_infix_unary>
 <fof_infix_unary> ::= <fof_term> != <fof_term>
@@ -38,7 +38,7 @@ BNF marks FOFX as not yet in use.
 ```bnf
 <cnf_formula> ::= <cnf_disjunction> | (<cnf_formula>)
 <cnf_disjunction> ::= <cnf_literal> |
-                      <cnf_disjunction> | <cnf_literal>
+                      <cnf_disjunction> "|" <cnf_literal>
 <cnf_literal> ::= <fof_atomic_formula> |
                   ~ <fof_atomic_formula> |
                   ~ (<fof_atomic_formula>) |
@@ -56,6 +56,7 @@ CNF variables are implicitly universally quantified.
 <upper_word> ::= <upper_alpha> <alpha_numeric>*
 <lower_word> ::= <lower_alpha> <alpha_numeric>*
 <back_quoted> ::= ` <upper_word>
+<single_quoted> ::= ' <sq_char> <sq_char>* '
 <distinct_object> ::= " <do_char>* "
 <number> ::= <integer> | <rational> | <real>
 ```
@@ -71,6 +72,9 @@ the standard defined names from system names:
 ```text
 defined propositions: $true, $false
 defined predicates:   $distinct, $less, $lesseq, $greater, $greatereq, $is_int, $is_rat
+defined terms:        $uminus, $sum, $difference, $product, $quotient, $quotient_e,
+                      $quotient_t, $quotient_f, $remainder_e, $remainder_t, $remainder_f,
+                      $floor, $ceiling, $truncate, $round, $to_int, $to_rat, $to_real
 system names:         $$...
 ```
 

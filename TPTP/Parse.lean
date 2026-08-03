@@ -54,6 +54,10 @@ private def quotedPiece (quote : UInt8) (body : GParser flexible String) :
     GParser conditional String :=
   GParser.capture (GParser.byte quote *> body <* GParser.byte quote)
 
+private def quotedPieceNonempty (quote : UInt8) (body : GParser conditional String) :
+    GParser conditional String :=
+  GParser.capture (GParser.byte quote *> body <* GParser.byte quote)
+
 private def escapedChunk : GParser conditional String :=
   GParser.map (fun byte => String.ofList ['\\', Char.ofNat byte.toNat]) escapedByte
 
@@ -62,8 +66,13 @@ private def quotedBody (quote : UInt8) : GParser flexible String :=
     (GParser.capture (GParser.takeWhile1 (fun byte => byte != quote && byte != Ascii.backslash)))
     escapedChunk)
 
+private def quotedBodyNonempty (quote : UInt8) : GParser conditional String :=
+  String.join <$> GParser.many1 (GParser.alt
+    (GParser.capture (GParser.takeWhile1 (fun byte => byte != quote && byte != Ascii.backslash)))
+    escapedChunk)
+
 private def quotedName : GParser conditional Name :=
-  Name.quoted <$> quotedPiece Ascii.apostrophe (quotedBody Ascii.apostrophe)
+  Name.quoted <$> quotedPieceNonempty Ascii.apostrophe (quotedBodyNonempty Ascii.apostrophe)
 
 private def backquotedName : GParser conditional Name :=
   Name.quoted <$> GParser.capture (GParser.byte 96 *> GParser.satisfy Ascii.isUpper *>
@@ -98,7 +107,7 @@ private def rawPiece (body : GParser conditional String) : GParser conditional S
     else if byte == 91 then rawGroup '[' ']' body
     else if byte == 123 then rawGroup '{' '}' body
     else if byte == 34 then quotedPiece 34 (quotedBody 34)
-    else if byte == 39 then quotedPiece 39 (quotedBody 39)
+    else if byte == 39 then quotedPieceNonempty 39 (quotedBodyNonempty 39)
     else if byte == Ascii.code '%' then rawLineComment
     else if byte == Ascii.slash then GParser.alt rawBlockComment rawSlash
     else rawText

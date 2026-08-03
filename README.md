@@ -63,6 +63,15 @@ The typed fixture corpus exercises the FOF/CNF ASTs and validators:
 python3 scripts/test-corpus.py --typed test/fixtures
 ```
 
+The FOF/CNF conformance matrix is checked against the versioned BNF reference:
+
+```text
+lake exe conformance
+```
+
+See [`CONFORMANCE.md`](CONFORMANCE.md) and the [BNF note](notes/TPTP-Syntax-BNF.md) for
+the production coverage, negative cases, corpus boundary, and release gate.
+
 The optional differential check uses E's independent TPTP parser for a conservative common
 subset when `eprover` is installed:
 
@@ -98,9 +107,10 @@ example : Except Grip.ParseError TPTP.CNF.Clause :=
   TPTP.CNF.parseFormulaString "p(a) | ~(q(a))"
 ```
 
-`TPTP.FOF.validate` checks variable scope, empty binders, and duplicate binders. CNF
-variables are implicitly universally quantified; a singleton `$false` body is represented
-as the empty clause.
+`TPTP.FOF.validate` checks variable scope, empty binders, duplicate binders, and defined
+symbol usage. `TPTP.CNF.validate` checks the same shared symbol rules; CNF variables are
+implicitly universally quantified. A singleton `$false` body is represented as the empty
+clause.
 
 ```lean
 open TPTP
@@ -126,12 +136,14 @@ process management.
 
 ## Scope
 
-The typed FOF/CNF implementation follows the untyped productions in the official TPTP BNF
+The typed FOF/CNF implementation targets the untyped productions in the official TPTP BNF
 revision v9.3.0.1: terms, atoms, equality/inequality, all FOF connectives and quantifiers,
 CNF disjunctions, comments, quoted/back-quoted names, defined/system symbols, and numeric
-terms. It does not yet model TFF/THF types, FOFX sequents, non-classical variants, structured
-TSTP annotations, include resolution, symbol declarations, or arity/type checking. Those
-remain available through the raw envelope and are future modules.
+terms. Its production matrix and pinned fixtures are documented in `CONFORMANCE.md`.
+The parser and validator do not yet model TFF/THF types, FOFX sequents, non-classical
+variants, structured TSTP annotations, include resolution, symbol declarations, or
+cross-statement arity environments. Those remain available through the raw envelope and
+are future modules.
 
 ## License
 
