@@ -72,9 +72,54 @@ private def checkComments : IO Unit := do
           "comment-aware annotation split"
     | .error error => throw (IO.userError (error.pretty input.toUTF8))
 
+private def checkFOF : IO Unit := do
+  let source := "! [X] : (p(X) => q(X))"
+  let formula ← match FOF.parseFormulaString source with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty source.toUTF8))
+  let expected : FOF.Formula :=
+    .forall #["X"] (.implies
+      (.atom (.predicate { raw := "p" } #[.variable "X"]))
+      (.atom (.predicate { raw := "q" } #[.variable "X"])))
+  check (formula == expected) "complete FOF formula shape"
+  for input in [
+      "p & q & r", "p | q | r", "p <=> q", "p => q", "p <= q", "p <~> q",
+      "p ~| q", "p ~& q", "a = b", "a != b", "p(\"x\")", "p('quoted')",
+      "p(`X)", "p(-1, 1/2, 1.5, 1E2, 1.5E-2)", "$distinct(a, b)", "$$tool(a)"
+    ] do
+    match FOF.parseFormulaString input with
+    | .ok _ => pure ()
+    | .error error => throw (IO.userError (s!"FOF rejected `{input}`:\n{error.pretty input.toUTF8}"))
+  match FOF.parseFormulaString "p => q & r" with
+  | .ok _ => throw (IO.userError "FOF accepted mixed unparenthesized connectives")
+  | .error _ => pure ()
+  match FOF.parseFormulaString "p(" with
+  | .ok _ => throw (IO.userError "FOF accepted malformed term")
+  | .error _ => pure ()
+
+private def checkCNF : IO Unit := do
+  let source := "(p(a) | ~q(a) | r(a) != s(a))"
+  let clause ← match CNF.parseFormulaString source with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty source.toUTF8))
+  check (clause.literals.size == 3) "CNF literal count"
+  match clause.literals[1]? with
+  | some (CNF.Literal.negative (FirstOrder.Atom.predicate symbol _)) =>
+      check (symbol.raw == "q") "CNF negative literal"
+  | _ => throw (IO.userError "CNF negative literal shape")
+  match clause.literals[2]? with
+  | some (CNF.Literal.positive (FirstOrder.Atom.inequality _ _)) => pure ()
+  | _ => throw (IO.userError "CNF inequality literal shape")
+  for input in ["p => q", "![X] : p(X)", "()"] do
+    match CNF.parseFormulaString input with
+    | .ok _ => throw (IO.userError s!"CNF accepted `{input}`")
+    | .error _ => pure ()
+
 def main : IO Unit := do
   checkDocument
   checkFormula
   checkErrors
   checkComments
+  checkFOF
+  checkCNF
   IO.println "TPTP tests: ok"

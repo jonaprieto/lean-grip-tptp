@@ -101,7 +101,7 @@ private def decimalFraction : P Unit := gdo
   grade_by by decide
 
 private def exponentMantissa : P Unit :=
-  GParser.chooseG unsignedInteger [decimalFraction]
+  GParser.chooseG decimalFraction [unsignedInteger]
 
 private def exponentMarker : P Unit :=
   GParser.chooseG ((fun _ => ()) <$> GParser.ch 'e')
@@ -146,7 +146,7 @@ def variableParser : P String := upperWord
 
 def argumentList (term : P Term) : P (Array Term) :=
   List.toArray <$> (GParser.ch '(' *> trivia *>
-    GParser.sepBy1 term (GParser.ch ',' *> trivia) <* GParser.ch ')')
+    GParser.sepBy1 term (GParser.ch ',' *> trivia) <* GParser.ch ')' <* trivia)
 
 private def symbolTerm (recursive : P Term) : P Term := gdo
   let symbol ← symbol

@@ -7,7 +7,9 @@ Authors: Jonathan Prieto-Cubides
 import TPTP.Syntax
 import TPTP.FirstOrder
 import TPTP.FOF
+import TPTP.FOF.Parse
 import TPTP.CNF
+import TPTP.CNF.Parse
 import TPTP.Parse
 import TPTP.Render
 
