@@ -106,6 +106,10 @@ private def checkFOF : IO Unit := do
   match FOF.parseFormulaString "p(" with
   | .ok _ => throw (IO.userError "FOF accepted malformed term")
   | .error _ => pure ()
+  for input in ["1", "\"object\""] do
+    match FOF.parseFormulaString input with
+    | .ok _ => throw (IO.userError s!"FOF accepted invalid proposition `{input}`")
+    | .error _ => pure ()
 
 private def checkCNF : IO Unit := do
   let source := "(p(a) | ~q(a) | r(a) != s(a))"

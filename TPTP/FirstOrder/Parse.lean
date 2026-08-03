@@ -142,6 +142,9 @@ def symbol : P Symbol :=
     else if Ascii.isLower byte then lowerWord
     else number
 
+private def predicateSymbol : P Symbol :=
+  GParser.chooseG dollarWord [quoted Ascii.apostrophe, backquoted, lowerWord]
+
 def variableParser : P String := upperWord
 
 def argumentList (term : P Term) : P (Array Term) :=
@@ -165,7 +168,7 @@ private def inequality : P Atom :=
   FirstOrder.Atom.inequality <$> term <* (GParser.string "!=" *> trivia) <*> term
 
 private def predicate : P Atom := gdo
-  let symbol ← symbol
+  let symbol ← predicateSymbol
   let arguments ← GParser.optional (argumentList term)
   return .predicate symbol (arguments.getD #[])
   grade_by by decide
