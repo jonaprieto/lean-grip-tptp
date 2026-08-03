@@ -136,6 +136,118 @@ private def cnfRejected : List (String × String) := [
   ("trailing argument comma", "p(a,)")
 ]
 
+private def checkTFFFormula (accepted : Bool) (label source : String) : IO Unit := do
+  let result := TFF.parseFormulaString source
+  if (isOk result == accepted) then
+    match result with
+    | .ok formula =>
+        match TFF.validateFormula {} formula with
+        | .ok _ => pure ()
+        | .error error =>
+            if accepted then
+              throw (IO.userError s!"TFF validation failed for {label}: {error}")
+            else
+              pure ()
+    | .error _ => pure ()
+  else
+    match result with
+    | .ok formula =>
+        match TFF.validateFormula {} formula with
+        | .ok _ => throw (IO.userError s!"TFF unexpectedly accepted {label}: {source}")
+        | .error _ => pure ()
+    | .error error =>
+        throw (IO.userError s!"TFF unexpectedly rejected {label}: {error.pretty source.toUTF8}")
+
+private def checkTFFDeclaration (accepted : Bool) (label source : String) : IO Unit := do
+  let result := TFF.parseTypeDeclarationString source
+  match result with
+  | .error error =>
+      if accepted then
+        throw (IO.userError s!"TFF unexpectedly rejected {label}: {error.pretty source.toUTF8}")
+      else
+        pure ()
+  | .ok declaration =>
+      match TFF.validateDeclaration {} declaration with
+      | .ok _ =>
+          if accepted then pure ()
+          else throw (IO.userError s!"TFF unexpectedly accepted {label}: {source}")
+      | .error error =>
+          if accepted then
+            throw (IO.userError s!"TFF declaration validation failed for {label}: {error}")
+          else
+            pure ()
+
+private def tffFormulaAccepted : List (String × String) := [
+  ("plain proposition", "p"),
+  ("truth", "$true"),
+  ("equality", "a = b"),
+  ("inequality", "a != b"),
+  ("typed universal", "![X:$int] : $less(X, 2)"),
+  ("typed existential", "?[X:$real] : $greater(X, 0.0)"),
+  ("default typed variable", "![X] : p(X)"),
+  ("arithmetic", "$sum(1, 2) = 3"),
+  ("distinct objects", "\"a\" != \"b\""),
+  ("conjunction", "p & q"),
+  ("implication", "p => q"),
+  ("nor", "p ~| q"),
+  ("nand", "p ~& q")
+]
+
+private def tffFormulaRejected : List (String × String) := [
+  ("polymorphic binder", "!>[A:$tType] : p"),
+  ("boolean term tuple", "[a, b] = c"),
+  ("conditional term", "$ite(p, a, b) = a"),
+  ("subtype", "a << b"),
+  ("empty argument list", "p()"),
+  ("missing typed variable", "![X:$int] p(X)"),
+  ("malformed type annotation", "![X:$int] : p(X):$o")
+]
+
+private def tffDeclarationAccepted : List (String × String) := [
+  ("user type", "human: $tType"),
+  ("integer constant", "zero: $int"),
+  ("unary function", "succ: $int > $int"),
+  ("binary function", "plus: ($int * $int) > $int"),
+  ("predicate", "less: ($int * $int) > $o")
+]
+
+private def tffDeclarationRejected : List (String × String) := [
+  ("boolean argument", "p: $o > $o"),
+  ("curried signature", "f: $int > $int > $int"),
+  ("bare product", "pair: ($int * $int)"),
+  ("unknown result type", "f: $unknown > $int")
+]
+
+private def checkTFF : IO Unit := do
+  for (label, source) in tffFormulaAccepted do
+    checkTFFFormula true label source
+  for (label, source) in tffFormulaRejected do
+    checkTFFFormula false label source
+  for (label, source) in tffDeclarationAccepted do
+    checkTFFDeclaration true label source
+  for (label, source) in tffDeclarationRejected do
+    checkTFFDeclaration false label source
+  let bodies : Array TFF.Body := #[
+    .declaration { symbol := { raw := "human" }, type := .atom { raw := "$tType" } },
+    .declaration { symbol := { raw := "john" }, type := .atom { raw := "human" } },
+    .formula (.atom (.equality (.constant { raw := "john" }) (.constant { raw := "john" })))
+  ]
+  match TFF.validateDocument bodies with
+  | .ok signature => if signature.declarations.size != 2 then
+      throw (IO.userError "TFF declaration sequence lost a binding")
+  | .error error => throw (IO.userError s!"TFF declaration sequence rejected: {error}")
+  let pDeclaration : TFF.Declaration :=
+    { symbol := { raw := "p" },
+      type := .mapping (#[.atom { raw := "$int" }]) (.atom { raw := "$o" }) }
+  let conflict : Array TFF.Body := #[
+    .formula (.atom (.predicate { raw := "p" } #[.constant { raw := "a" }])),
+    .declaration pDeclaration
+  ]
+  match TFF.validateDocument conflict with
+  | .error (.conflictingDeclaration "p" _ _) => pure ()
+  | .error error => throw (IO.userError s!"wrong TFF conflict error: {error}")
+  | .ok _ => throw (IO.userError "TFF accepted a conflicting default declaration")
+
 private def checkValidation : IO Unit := do
   let valid := FOF.Formula.atom
     (.predicate { raw := "$less" } #[.constant { raw := "a" }, .constant { raw := "b" }])
@@ -181,7 +293,9 @@ def main : IO Unit := do
     checkCNF true label source
   for (label, source) in cnfRejected do
     checkCNF false label source
+  checkTFF
   checkValidation
   IO.println (s!"TPTP conformance: {fofAccepted.length} FOF accepted, " ++
     s!"{fofRejected.length} FOF rejected, {cnfAccepted.length} CNF accepted, " ++
-    s!"{cnfRejected.length} CNF rejected")
+    s!"{cnfRejected.length} CNF rejected, {tffFormulaAccepted.length} TFF accepted, " ++
+    s!"{tffFormulaRejected.length} TFF rejected")

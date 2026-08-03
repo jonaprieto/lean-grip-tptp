@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Add total TF0/TFF syntax for typed formulas, declarations, product signatures, and equality.
+- Add TF0 validation for declaration order, default typing, variable scope, arity, and arithmetic.
+- Add TFF rendering, conformance cases, official tutorial fixture, corpus counts, and E checks.
+- Extend the demo and BNF/conformance documentation to cover the TFF boundary.
+
 ## 0.2.1
 
 - Pin the untyped FOF/CNF target to TPTP BNF v9.3.0.1 with a checked-in reference note.

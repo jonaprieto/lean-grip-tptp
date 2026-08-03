@@ -25,9 +25,9 @@ sys.stdout.write(typed.stdout)
 if typed.returncode:
     sys.stderr.write(typed.stderr)
     raise SystemExit("Lean rejected a differential fixture")
-counts = re.search(r"TPTP typed corpus: \d+ files, (\d+) FOF, (\d+) CNF", typed.stdout)
-if counts is None or int(counts.group(1)) + int(counts.group(2)) == 0:
-    raise SystemExit("differential fixtures contain no typed FOF/CNF statements")
+counts = re.search(r"TPTP typed corpus: \d+ files, (\d+) FOF, (\d+) CNF, (\d+) TFF", typed.stdout)
+if counts is None or sum(int(counts.group(index)) for index in (1, 2, 3)) == 0:
+    raise SystemExit("differential fixtures contain no typed FOF/CNF/TFF statements")
 
 prover = shutil.which("eprover")
 if prover is None:

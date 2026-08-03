@@ -47,6 +47,58 @@ BNF marks FOFX as not yet in use.
 
 CNF variables are implicitly universally quantified.
 
+## TFF / TF0
+
+This release implements the monomorphic TF0 profile of the TFF language. The
+official TFF productions also describe TF1 and TXF syntax; those extensions are
+not silently accepted by the TF0 parser.
+
+~~~bnf
+<tff_formula> ::= <tff_logic_formula>
+<tff_logic_formula> ::= <tff_unitary_formula> | <tff_unary_formula> |
+                        <tff_binary_formula> | <tff_defined_infix>
+<tff_binary_formula> ::= <tff_binary_nonassoc> | <tff_binary_assoc>
+<tff_binary_nonassoc> ::= <tff_unit_formula> <nonassoc_connective>
+                          <tff_unit_formula>
+<tff_binary_assoc> ::= <tff_or_formula> | <tff_and_formula>
+<tff_or_formula> ::= <tff_unit_formula> "|" <tff_unit_formula> |
+                     <tff_or_formula> "|" <tff_unit_formula>
+<tff_and_formula> ::= <tff_unit_formula> "&" <tff_unit_formula> |
+                      <tff_and_formula> "&" <tff_unit_formula>
+<tff_unitary_formula> ::= <tff_quantified_formula> |
+                          <tff_atomic_formula> |
+                          (<tff_logic_formula>)
+<tff_quantified_formula> ::= <tff_quantifier>
+                             [<tff_variable_list>] :
+                             <tff_unit_formula>
+<tff_variable_list> ::= <tff_variable> |
+                        <tff_variable>, <tff_variable_list>
+<tff_variable> ::= <tff_typed_variable> | <variable>
+<tff_typed_variable> ::= <variable> : <tff_atomic_type>
+<tff_infix_unary> ::= <tff_unitary_term> != <tff_unitary_term>
+<tff_atom_typing> ::= <untyped_atom> : <tff_top_level_type>
+~~~
+
+TF0 types used by this parser are atomic types and first-order signatures:
+
+~~~bnf
+<tff_top_level_type> ::= <tff_atomic_type> | <tff_mapping_type>
+<tff_atomic_type> ::= <type_constant> | <defined_type>
+<tff_mapping_type> ::= <tff_unitary_type> > <tff_atomic_type>
+<tff_unitary_type> ::= <tff_atomic_type> |
+                       (<tff_xprod_type>)
+<tff_xprod_type> ::= <tff_unitary_type> * <tff_atomic_type> |
+                     <tff_xprod_type> * <tff_atomic_type>
+~~~
+
+TPTP.TFF.TypeExpr represents atomic types, product domains, and mappings.
+TPTP.TFF.validateDocument additionally enforces TF0 semantic rules: arguments
+and function results are atomic and not $o, user types are declared before use,
+symbols have at most one type, untyped symbols default to $i arguments, and
+equality/arithmetic operands have compatible types. The official type-system
+description is the reference for these rules, including $i, $o, $tType,
+default typing, and arithmetic overloads.
+
 ## Shared lexical rules
 
 ```bnf

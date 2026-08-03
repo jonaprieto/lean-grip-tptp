@@ -196,6 +196,78 @@ private def checkCNF : IO Unit := do
     | .ok _ => throw (IO.userError s!"CNF accepted `{input}`")
     | .error _ => pure ()
 
+private def checkTFF : IO Unit := do
+  let source := [
+    "tff(human_type,type,human: $tType).",
+    "tff(grade_type,type,grade: $tType).",
+    "tff(john_decl,type,john: human).",
+    "tff(a_decl,type,a: grade).",
+    "tff(f_decl,type,f: grade).",
+    "tff(grade_of_decl,type,grade_of: human > grade).",
+    "tff(created_equal_decl,type,created_equal: (human * human) > $o).",
+    "tff(all_created_equal,axiom,![H1:human,H2:human]:created_equal(H1,H2)).",
+    "tff(john_got_an_f,axiom,grade_of(john) = f).",
+    "tff(someone_got_an_a,conjecture,?[H:human]:grade_of(H) = a).",
+    "tff(arithmetic,axiom,![X:$int,Y:$int]:$less(X,$sum(Y,1)))."
+  ]
+  let mut bodies : Array TFF.Body := #[]
+  for line in source do
+    let statement ← match parseStatementString line with
+      | .ok value => pure value
+      | .error error => throw (IO.userError (error.pretty line.toUTF8))
+    let body ← match TFF.parseStatementBody statement with
+      | .ok value => pure value
+      | .error (.syntax error) => throw (IO.userError (error.pretty statement.formula.toUTF8))
+      | .error (.wrongKind expected actual) =>
+          throw (IO.userError s!"kind error: {expected} vs {actual}")
+    bodies := bodies.push body
+  let signature ← match TFF.validateDocument bodies with
+    | .ok value => pure value
+    | .error error => throw (IO.userError s!"TFF validation: {error}")
+  check (signature.declarations.size == 7) "TFF declaration/default count"
+  let formulaSource := "![X:$real,Y:$real] : ($greater(X,Y) => X != Y)"
+  let formula ← match TFF.parseFormulaString formulaSource with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty formulaSource.toUTF8))
+  let rendered := formula.render
+  match TFF.parseFormulaString rendered with
+  | .ok reparsed => check (reparsed == formula) "TFF parse/render/parse"
+  | .error error => throw (IO.userError (error.pretty rendered.toUTF8))
+  let declaration ← match TFF.parseTypeDeclarationString "owns: (human * cat) > $o" with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty "owns: (human * cat) > $o".toUTF8))
+  let declarationRendered := declaration.render
+  match TFF.parseTypeDeclarationString declarationRendered with
+  | .ok reparsed => check (reparsed == declaration) "TFF declaration parse/render/parse"
+  | .error error => throw (IO.userError (error.pretty declarationRendered.toUTF8))
+  for input in [
+      "![X:human] : p(X)", "p(1) = $sum(1, 2)", "$distinct(1, 2)",
+      "![X] : p(X)", "p(a) | ~q(a)", "p != q", "p ~| q", "p ~& q"
+    ] do
+    match TFF.parseFormulaString input with
+    | .ok _ => pure ()
+    | .error error => throw (IO.userError (s!"TFF rejected {input}:\n{error.pretty input.toUTF8}"))
+  match TFF.parseFormulaString "![X] : p(X)" with
+  | .ok formula =>
+      let signature : TFF.Signature := { declarations := #[
+        { symbol := { raw := "human" }, type := .atom { raw := "$tType" } }] }
+      match TFF.validateFormula signature formula with
+      | .ok _ => pure ()
+      | .error error => throw (IO.userError s!"TFF default typing: {error}")
+  | .error error => throw (IO.userError (error.pretty "![X:human] : p(X)".toUTF8))
+  match TFF.parseFormulaString "![X:human] : p(X)" with
+  | .ok formula =>
+      let signature : TFF.Signature := { declarations := #[
+        { symbol := { raw := "human" }, type := .atom { raw := "$tType" } },
+        { symbol := { raw := "grade" }, type := .atom { raw := "$tType" } },
+        { symbol := { raw := "p" },
+          type := .mapping #[.atom { raw := "grade" }] (.atom { raw := "$o" }) }
+      ] }
+      match TFF.validateFormula signature formula with
+      | .ok _ => throw (IO.userError "TFF accepted a formula with an unknown type")
+      | .error _ => pure ()
+  | .error error => throw (IO.userError (error.pretty "![X:human] : p(X)".toUTF8))
+
 def main : IO Unit := do
   checkDocument
   checkFormula
@@ -203,4 +275,5 @@ def main : IO Unit := do
   checkComments
   checkFOF
   checkCNF
+  checkTFF
   IO.println "TPTP tests: ok"

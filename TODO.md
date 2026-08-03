@@ -181,19 +181,21 @@ is complete; typed TFF/THF and structured TSTP work remain future stages below.
 
 Difficulty: medium-high. Verification confidence: high for syntax; separate for typing.
 
-- [ ] Add type expressions, `$tType`, `$i`, `$o`, user-defined types, function types,
+- [x] Add type expressions, `$tType`, `$i`, `$o`, user-defined types, function signatures,
   product-style argument signatures, and typed variables.
-- [ ] Parse `type` declarations and typed formulas without conflating declarations with
+- [x] Parse `type` declarations and typed formulas without conflating declarations with
   ordinary formulas.
-- [ ] Add typed terms, typed equality, arithmetic and standard defined symbols required by
-  TFF0, while preserving unknown symbols for forward compatibility.
-- [ ] Add a `validate` layer for declaration ordering, duplicate declarations, arity, and
-  type compatibility; do not hide validation failures inside the syntax parser.
-- [ ] Test default typing, explicit typing, ill-typed applications, arithmetic literals,
+- [x] Add typed terms, typed equality, arithmetic and standard defined symbols required by
+  TFF0, while preserving system symbols for forward compatibility.
+- [x] Add a `validate` layer for declaration ordering, duplicate/conflicting declarations,
+  arity, default typing, and type compatibility; do not hide validation failures inside the
+  syntax parser.
+- [x] Test default typing, explicit typing, ill-typed applications, arithmetic literals,
   and declaration-order errors against recorded examples.
 
-Exit criterion: TFF0 syntax is complete for the selected reference version and the
-validator reports useful errors for invalid signatures without changing parser behavior.
+Exit criterion: TF0 syntax is complete for the selected reference version and the validator
+reports useful errors for invalid signatures without changing parser behavior. The checked-in
+fixture, corpus runner, E differential check, conformance matrix, and demo all cover TFF.
 
 ## P2 — polymorphic typed first-order form (TFF1)
 

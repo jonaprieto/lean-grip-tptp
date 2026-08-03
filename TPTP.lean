@@ -15,12 +15,15 @@ import TPTP.CNF
 import TPTP.CNF.Parse
 import TPTP.CNF.Render
 import TPTP.CNF.Validate
+import TPTP.TFF
+import TPTP.TFF.Parse
+import TPTP.TFF.Validate
 import TPTP.Parse
 import TPTP.Render
 
 /-!
 # TPTP
 
-Public entry point for total TPTP/TSTP parsing and the supported first-order
-formula AST.
+Public entry point for total TPTP/TSTP parsing and the supported FOF, CNF, and
+TF0/TFF syntax trees and validators.
 -/
