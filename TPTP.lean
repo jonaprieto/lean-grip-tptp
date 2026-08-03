@@ -5,6 +5,9 @@ Authors: Jonathan Prieto-Cubides
 -/
 
 import TPTP.Syntax
+import TPTP.FirstOrder
+import TPTP.FOF
+import TPTP.CNF
 import TPTP.Parse
 import TPTP.Render
 

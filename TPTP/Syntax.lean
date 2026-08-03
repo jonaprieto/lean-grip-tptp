@@ -66,10 +66,14 @@ inductive Role where
   | assumption
   | lemma
   | theorem
+  | corollary
   | conjecture
   | negatedConjecture
   | plain
   | type
+  | interpretation
+  | logic
+  | unknown
   | finiteDomain
   | finiteFunctor
   | finitePredicate
@@ -83,10 +87,14 @@ def Role.ofString : String → Role
   | "assumption" => .assumption
   | "lemma" => .lemma
   | "theorem" => .theorem
+  | "corollary" => .corollary
   | "conjecture" => .conjecture
   | "negated_conjecture" => .negatedConjecture
   | "plain" => .plain
   | "type" => .type
+  | "interpretation" => .interpretation
+  | "logic" => .logic
+  | "unknown" => .unknown
   | "fi_domain" => .finiteDomain
   | "fi_functors" => .finiteFunctor
   | "fi_predicates" => .finitePredicate
@@ -99,10 +107,14 @@ def Role.render : Role → String
   | .assumption => "assumption"
   | .lemma => "lemma"
   | .theorem => "theorem"
+  | .corollary => "corollary"
   | .conjecture => "conjecture"
   | .negatedConjecture => "negated_conjecture"
   | .plain => "plain"
   | .type => "type"
+  | .interpretation => "interpretation"
+  | .logic => "logic"
+  | .unknown => "unknown"
   | .finiteDomain => "fi_domain"
   | .finiteFunctor => "fi_functors"
   | .finitePredicate => "fi_predicates"
