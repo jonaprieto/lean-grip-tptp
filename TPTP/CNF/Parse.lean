@@ -6,6 +6,7 @@ Authors: Jonathan Prieto-Cubides
 
 import TPTP.CNF
 import TPTP.FirstOrder.Parse
+import TPTP.Syntax
 
 /-!
 # TPTP.CNF.Parse: total clause normal form parser
@@ -56,5 +57,13 @@ def parseFormula (source : ByteArray) : Except Grip.ParseError Clause :=
 /-- Parse a complete CNF clause from UTF-8 text. -/
 def parseFormulaString (source : String) : Except Grip.ParseError Clause :=
   parseFormula source.toUTF8
+
+def parseStatementFormula (statement : TPTP.Statement) : Except TPTP.FormulaError Clause :=
+  if statement.kind != .cnf then
+    .error (.wrongKind .cnf statement.kind)
+  else
+    match parseFormulaString statement.formula with
+    | .ok clause => .ok clause
+    | .error error => .error (.syntax error)
 
 end TPTP.CNF

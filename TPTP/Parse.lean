@@ -62,10 +62,14 @@ private def quotedBody (quote : UInt8) : GParser flexible String :=
 private def quotedName : GParser conditional Name :=
   Name.quoted <$> quotedPiece Ascii.apostrophe (quotedBody Ascii.apostrophe)
 
+private def backquotedName : GParser conditional Name :=
+  Name.quoted <$> GParser.capture (GParser.byte 96 *> GParser.satisfy Ascii.isUpper *>
+    GParser.takeWhile (fun byte => Ascii.isAlphaNum byte || byte == 95))
+
 private def bareName : GParser conditional Name :=
   Name.bare <$> GParser.capture (GParser.takeWhile1 isNameByte)
 
-private def name : GParser conditional Name := quotedName <|> bareName
+private def name : GParser conditional Name := GParser.chooseG quotedName [backquotedName, bareName]
 
 private def rawGroup (opener closer : Char) (body : GParser conditional String) :
     GParser conditional String :=

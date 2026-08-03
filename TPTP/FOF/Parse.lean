@@ -6,6 +6,7 @@ Authors: Jonathan Prieto-Cubides
 
 import TPTP.FOF
 import TPTP.FirstOrder.Parse
+import TPTP.Syntax
 
 /-!
 # TPTP.FOF.Parse: total FOF formula parser
@@ -111,5 +112,13 @@ def parseFormula (source : ByteArray) : Except Grip.ParseError Formula :=
 /-- Parse a complete FOF formula from UTF-8 text. -/
 def parseFormulaString (source : String) : Except Grip.ParseError Formula :=
   parseFormula source.toUTF8
+
+def parseStatementFormula (statement : TPTP.Statement) : Except TPTP.FormulaError Formula :=
+  if statement.kind != .fof then
+    .error (.wrongKind .fof statement.kind)
+  else
+    match parseFormulaString statement.formula with
+    | .ok formula => .ok formula
+    | .error error => .error (.syntax error)
 
 end TPTP.FOF

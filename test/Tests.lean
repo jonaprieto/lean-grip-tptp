@@ -16,7 +16,7 @@ private def documentSource : String :=
     "include('Axioms/foo.p', [a1, a2]).\n" ++
     "fof(ax, axiom, p(a)).\n" ++
     "tff(type, type, $int < $int, introduced(definition)).\n" ++
-    "cnf(goal, conjecture, p(a) | ~q(a), inference(resolution, [status(thm)], [ax])).\n"
+    "cnf(`Goal, conjecture, p(a) | ~q(a), inference(resolution, [status(thm)], [ax])).\n"
 
 private def checkDocument : IO Unit := do
   let document ← match parseString documentSource with
@@ -36,6 +36,7 @@ private def checkDocument : IO Unit := do
   | _ => throw (IO.userError "second item is not a statement")
   match document.items[3]? with
   | some (Item.statement value) =>
+      check (value.name == .quoted "`Goal") "back-quoted statement name"
       check (value.annotations == some "inference(resolution, [status(thm)], [ax])")
         "nested annotation split"
   | _ => throw (IO.userError "fourth item is not a statement")
@@ -90,6 +91,15 @@ private def checkFOF : IO Unit := do
     match FOF.parseFormulaString input with
     | .ok _ => pure ()
     | .error error => throw (IO.userError (s!"FOF rejected `{input}`:\n{error.pretty input.toUTF8}"))
+  let statement : Statement :=
+    { kind := .fof, name := .bare "goal", role := .conjecture, formula := source }
+  match FOF.parseStatementFormula statement with
+  | .ok _ => pure ()
+  | .error _ => throw (IO.userError "FOF statement formula rejected")
+  let wrongKind : Statement := { statement with kind := .cnf }
+  match FOF.parseStatementFormula wrongKind with
+  | .error (.wrongKind .fof .cnf) => pure ()
+  | _ => throw (IO.userError "FOF accepted a CNF statement")
   match FOF.parseFormulaString "p => q & r" with
   | .ok _ => throw (IO.userError "FOF accepted mixed unparenthesized connectives")
   | .error _ => pure ()
@@ -110,6 +120,11 @@ private def checkCNF : IO Unit := do
   match clause.literals[2]? with
   | some (CNF.Literal.positive (FirstOrder.Atom.inequality _ _)) => pure ()
   | _ => throw (IO.userError "CNF inequality literal shape")
+  let statement : Statement :=
+    { kind := .cnf, name := .bare "goal", role := .conjecture, formula := source }
+  match CNF.parseStatementFormula statement with
+  | .ok value => check (value == clause) "CNF statement formula"
+  | .error _ => throw (IO.userError "CNF statement formula rejected")
   for input in ["p => q", "![X] : p(X)", "()"] do
     match CNF.parseFormulaString input with
     | .ok _ => throw (IO.userError s!"CNF accepted `{input}`")

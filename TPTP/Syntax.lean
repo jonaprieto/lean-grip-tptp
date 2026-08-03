@@ -1,3 +1,5 @@
+import Grip
+
 /-
 Copyright (c) 2026 Jonathan Prieto-Cubides. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
@@ -133,6 +135,11 @@ structure Statement where
   /-- The optional TSTP annotation after the formula. -/
   annotations : Option String := none
   deriving BEq, DecidableEq, Repr
+
+inductive FormulaError where
+  | syntax (error : Grip.ParseError)
+  | wrongKind (expected actual : Kind)
+  deriving BEq, Repr
 
 /-- An `include(...)` directive. -/
 structure Include where
