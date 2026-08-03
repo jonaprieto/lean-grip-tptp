@@ -44,15 +44,16 @@ Run the included example locally:
 lake exe demo
 ```
 
-Run a local corpus such as `jonaprieto/tptp-pack` when it is checked out:
+Run the public [`jonaprieto/prop-pack`](https://github.com/jonaprieto/prop-pack) corpus when
+it is checked out:
 
 ```text
-python3 scripts/test-corpus.py ../tptp-pack
+python3 scripts/test-corpus.py ../prop-pack
 ```
 
 The corpus runner discovers `.p`, `.tptp`, and `.tstp` files and feeds them to the same
-total parser used by the library. The corpus remains external so package clones and CI do
-not carry a large problem bank.
+total parser used by the library. CI runs the complete `prop-pack` corpus without copying it
+into this package.
 
 ## What is parsed
 
