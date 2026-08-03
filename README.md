@@ -96,13 +96,6 @@ This package parses the source envelope and a deliberately small first-order for
 It does not resolve `include` paths, execute prover output, reconstruct proofs, or validate
 the full typed/higher-order TPTP grammar. Those belong in consumers or future typed modules.
 
-## Background
-
-The parser was extracted while revamping OATP, which grows out of `online-atps`, an earlier
-Haskell project I created for working with online automated theorem provers and reconstructing
-their proofs for Agda. I also contributed to ASR/Apia. The standalone format layer keeps that
-experience reusable across Lean 4 tools.
-
 ## License
 
 Apache 2.0. See [LICENSE](LICENSE).
