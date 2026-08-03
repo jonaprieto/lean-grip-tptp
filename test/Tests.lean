@@ -139,7 +139,7 @@ private def checkCNF : IO Unit := do
     | .ok value => pure value
     | .error error => throw (IO.userError (error.pretty source.toUTF8))
   check (clause.literals.size == 3) "CNF literal count"
-  for input in ["p(a) | ~(q(a)) | r(a) != s(a)"] do
+  for input in ["p(a) | ~(q(a)) | r(a) != s(a)", "((p(a) | ~q(a)) )"] do
     match CNF.parseFormulaString input with
     | .ok _ => pure ()
     | .error error =>

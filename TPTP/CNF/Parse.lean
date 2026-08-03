@@ -53,7 +53,7 @@ private def normalize (clause : Clause) : Clause :=
 private def clauseParser : P Clause :=
   GParser.fix fun recursive =>
     let parenthesized : P Clause :=
-      GParser.ch '(' *> trivia *> recursive <* GParser.ch ')'
+      GParser.ch '(' *> trivia *> recursive <* GParser.ch ')' <* trivia
     let disjunction : P Clause :=
       GParser.map (fun (first, rest) => normalize { literals := (first :: rest).toArray })
         (GParser.map2 Prod.mk literal (GParser.many (separator *> literal)))
