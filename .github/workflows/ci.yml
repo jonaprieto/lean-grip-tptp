@@ -65,7 +65,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: jonaprieto/prop-pack
-          ref: master
+          ref: b038fc6f54841ad8179931b96eb94fdf61763384
           path: prop-pack
           persist-credentials: false
       - name: Configure private ecosystem access
