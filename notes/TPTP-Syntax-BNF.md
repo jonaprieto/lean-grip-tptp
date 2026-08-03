@@ -68,6 +68,8 @@ not silently accepted by the TF0 parser.
 <tff_unitary_formula> ::= <tff_quantified_formula> |
                           <tff_atomic_formula> |
                           (<tff_logic_formula>)
+<tff_unary_formula> ::= <tff_prefix_unary> | <tff_infix_unary>
+<tff_prefix_unary> ::= <tff_unary_connective> <tff_preunit_formula>
 <tff_quantified_formula> ::= <tff_quantifier>
                              [<tff_variable_list>] :
                              <tff_unit_formula>

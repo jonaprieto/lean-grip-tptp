@@ -175,7 +175,7 @@ FOF and CNF statements parse into typed ASTs with no fallback for the selected g
 revision; malformed and semantically invalid fixtures fail in the correct layer; the
 curated TPTP subset passes; normalized output parses back to an equivalent AST; and OATP
 can consume the typed result without touching the raw envelope implementation. This stage
-is complete; typed TFF/THF and structured TSTP work remain future stages below.
+is complete; typed THF and structured TSTP work remain future stages below.
 
 ## P1 — monomorphic typed first-order form (TFF0)
 
