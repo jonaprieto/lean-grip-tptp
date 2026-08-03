@@ -6,10 +6,13 @@ Authors: Jonathan Prieto-Cubides
 
 import TPTP.Syntax
 import TPTP.FirstOrder
+import TPTP.FirstOrder.Render
 import TPTP.FOF
 import TPTP.FOF.Parse
+import TPTP.FOF.Render
 import TPTP.CNF
 import TPTP.CNF.Parse
+import TPTP.CNF.Render
 import TPTP.Parse
 import TPTP.Render
 

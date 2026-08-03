@@ -24,7 +24,7 @@ private def positiveLiteral : P Literal :=
   Literal.positive <$> FirstOrder.Parser.atom
 
 private def parenthesizedAtom : P FirstOrder.Atom :=
-  GParser.ch '(' *> trivia *> FirstOrder.Parser.atom <* GParser.ch ')'
+  GParser.ch '(' *> trivia *> FirstOrder.Parser.atom <* GParser.ch ')' <* trivia
 
 private def negativeLiteral : P Literal := gdo
   let ignoredMarker ← GParser.ch '~'

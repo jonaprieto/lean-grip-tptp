@@ -83,6 +83,11 @@ private def checkFOF : IO Unit := do
       (.atom (.predicate { raw := "p" } #[.variable "X"]))
       (.atom (.predicate { raw := "q" } #[.variable "X"])))
   check (formula == expected) "complete FOF formula shape"
+  let rendered := formula.render
+  check (rendered == "! [X] : ((p(X) => q(X)))") "canonical FOF rendering"
+  match FOF.parseFormulaString rendered with
+  | .ok reparsed => check (reparsed == formula) "FOF parse/render/parse"
+  | .error error => throw (IO.userError (error.pretty rendered.toUTF8))
   for input in [
       "p & q & r", "p | q | r", "p <=> q", "p => q", "p <= q", "p <~> q",
       "p ~| q", "p ~& q", "a = b", "a != b", "p(\"x\")", "p('quoted')",
@@ -90,7 +95,8 @@ private def checkFOF : IO Unit := do
     ] do
     match FOF.parseFormulaString input with
     | .ok _ => pure ()
-    | .error error => throw (IO.userError (s!"FOF rejected `{input}`:\n{error.pretty input.toUTF8}"))
+    | .error error =>
+        throw (IO.userError (s!"FOF rejected `{input}`:\n{error.pretty input.toUTF8}"))
   let statement : Statement :=
     { kind := .fof, name := .bare "goal", role := .conjecture, formula := source }
   match FOF.parseStatementFormula statement with
@@ -117,6 +123,11 @@ private def checkCNF : IO Unit := do
     | .ok value => pure value
     | .error error => throw (IO.userError (error.pretty source.toUTF8))
   check (clause.literals.size == 3) "CNF literal count"
+  for input in ["p(a) | ~(q(a)) | r(a) != s(a)"] do
+    match CNF.parseFormulaString input with
+    | .ok _ => pure ()
+    | .error error =>
+        throw (IO.userError (s!"CNF regression `{input}`:\n{error.pretty input.toUTF8}"))
   match clause.literals[1]? with
   | some (CNF.Literal.negative (FirstOrder.Atom.predicate symbol _)) =>
       check (symbol.raw == "q") "CNF negative literal"
@@ -124,6 +135,11 @@ private def checkCNF : IO Unit := do
   match clause.literals[2]? with
   | some (CNF.Literal.positive (FirstOrder.Atom.inequality _ _)) => pure ()
   | _ => throw (IO.userError "CNF inequality literal shape")
+  let rendered := clause.render
+  check (rendered == "p(a) | ~(q(a)) | r(a) != s(a)") "canonical CNF rendering"
+  match CNF.parseFormulaString rendered with
+  | .ok reparsed => check (reparsed == clause) "CNF parse/render/parse"
+  | .error error => throw (IO.userError (error.pretty rendered.toUTF8))
   let statement : Statement :=
     { kind := .cnf, name := .bare "goal", role := .conjecture, formula := source }
   match CNF.parseStatementFormula statement with
