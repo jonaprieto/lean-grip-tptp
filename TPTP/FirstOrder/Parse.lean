@@ -70,8 +70,8 @@ private def backquoted : P Symbol :=
 
 private def dollarWord : P Symbol :=
   Symbol.mk <$> (GParser.capture
-    (GParser.byte (Ascii.code '$') *> GParser.takeWhile (fun byte =>
-      Ascii.isAlphaNum byte || byte == Ascii.code '$')) <* trivia)
+    (GParser.byte (Ascii.code '$') *> GParser.optional (GParser.byte (Ascii.code '$')) *>
+      GParser.takeWhile (fun byte => Ascii.isAlphaNum byte || byte == 95)) <* trivia)
 
 private def zero : P Unit := (fun _ => ()) <$> GParser.ch '0'
 

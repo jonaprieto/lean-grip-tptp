@@ -26,6 +26,10 @@ lean_exe «tests» where
   root := `Tests
   srcDir := "test"
 
+lean_exe «conformance» where
+  root := `Conformance
+  srcDir := "test"
+
 lean_exe «corpus» where
   root := `Corpus
   srcDir := "examples"

@@ -40,6 +40,10 @@ private def checkDocument : IO Unit := do
       check (value.annotations == some "inference(resolution, [status(thm)], [ax])")
         "nested annotation split"
   | _ => throw (IO.userError "fourth item is not a statement")
+  match parseStatementString "fof(datatype, type-datatype, p(a))." with
+  | .ok statement => check (statement.role == .other "type-datatype") "subrole"
+  | .error error =>
+      throw (IO.userError (error.pretty "fof(datatype, type-datatype, p(a)).".toUTF8))
 
 private def checkFormula : IO Unit := do
   let source := "! [X] : (p(X) => q(X))"
@@ -94,7 +98,8 @@ private def checkFOF : IO Unit := do
   for input in [
       "p & q & r", "p | q | r", "p <=> q", "p => q", "p <= q", "p <~> q",
       "p ~| q", "p ~& q", "a = b", "a != b", "p(\"x\")", "p('quoted')",
-      "p(`X)", "p(-1, 1/2, 1.5, 1E2, 1.5E-2)", "$distinct(a, b)", "$$tool(a)"
+      "p(`X)", "p(-1, 1/2, 1.5, 1E2, 1.5E-2)", "$distinct(a, b)", "$$tool(a)",
+      "$quotient_e(a, b)"
     ] do
     match FOF.parseFormulaString input with
     | .ok _ => pure ()
@@ -132,6 +137,14 @@ private def checkFOF : IO Unit := do
   match FOF.validate empty with
   | .error .emptyBinder => pure ()
   | _ => throw (IO.userError "FOF accepted an empty binder")
+  let unknown : FOF.Formula := .atom (.predicate { raw := "$mystery" } #[])
+  match FOF.validate unknown with
+  | .error (.unknownDefinedSymbol "$mystery") => pure ()
+  | _ => throw (IO.userError "FOF accepted an unknown defined symbol")
+  let missingArguments : FOF.Formula := .atom (.predicate { raw := "$less" } #[])
+  match FOF.validate missingArguments with
+  | .error (.invalidDefinedUse "$less") => pure ()
+  | _ => throw (IO.userError "FOF accepted a defined predicate without arguments")
 
 private def checkCNF : IO Unit := do
   let source := "(p(a) | ~q(a) | r(a) != s(a))"
@@ -161,12 +174,24 @@ private def checkCNF : IO Unit := do
     | .error error => throw (IO.userError (error.pretty "$false".toUTF8))
   check empty.literals.isEmpty "CNF empty clause"
   check (empty.render == "$false") "CNF empty clause rendering"
+  for input in [
+      "$true", "$distinct(a, b)", "$$system(a)", "1 != 2", "\"a\" != \"b\"",
+      "~($less(a, b))"
+    ] do
+    match CNF.parseFormulaString input with
+    | .ok _ => pure ()
+    | .error error =>
+        throw (IO.userError (s!"CNF rejected `{input}`:\n{error.pretty input.toUTF8}"))
   let statement : Statement :=
     { kind := .cnf, name := .bare "goal", role := .conjecture, formula := source }
   match CNF.parseStatementFormula statement with
   | .ok value => check (value == clause) "CNF statement formula"
   | .error _ => throw (IO.userError "CNF statement formula rejected")
   for input in ["p => q", "![X] : p(X)", "()"] do
+    match CNF.parseFormulaString input with
+    | .ok _ => throw (IO.userError s!"CNF accepted `{input}`")
+    | .error _ => pure ()
+  for input in ["p & q | r", "p | q & r", "p => q => r", "p |", "~ ~p"] do
     match CNF.parseFormulaString input with
     | .ok _ => throw (IO.userError s!"CNF accepted `{input}`")
     | .error _ => pure ()

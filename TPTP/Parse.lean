@@ -22,6 +22,9 @@ open Grip GParser
 private def isNameByte (byte : UInt8) : Bool :=
   Ascii.isAlphaNum byte || byte == 95 || byte == 36
 
+private def isRoleByte (byte : UInt8) : Bool :=
+  isNameByte byte || byte == Ascii.code '-'
+
 private def isDelimiter (byte : UInt8) : Bool :=
   byte == 40 || byte == 41 || byte == 91 || byte == 93 || byte == 123 || byte == 125 ||
     byte == 34 || byte == 39 || byte == Ascii.code '%' || byte == Ascii.slash
@@ -175,7 +178,7 @@ private def kind : GParser conditional Kind :=
   Kind.ofString <$> GParser.capture (GParser.takeWhile1 isNameByte)
 
 private def role : GParser conditional Role :=
-  Role.ofString <$> GParser.capture (GParser.takeWhile1 isNameByte)
+  Role.ofString <$> GParser.capture (GParser.takeWhile1 isRoleByte)
 
 private def statementParser : GParser conditional Statement := gdo
   let kind ← kind
