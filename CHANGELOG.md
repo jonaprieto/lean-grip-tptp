@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0
+
+- Add TF1 rank-1 polymorphic types, fixed-arity constructors, explicit instantiation,
+  capture-avoiding substitution, and alpha-renaming.
+
 ## 0.3.0
 
 - Add total TF0/TFF syntax for typed formulas, declarations, product signatures, and equality.

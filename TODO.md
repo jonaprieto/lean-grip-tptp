@@ -201,15 +201,16 @@ fixture, corpus runner, E differential check, conformance matrix, and demo all c
 
 Difficulty: high. Verification confidence: medium-high after type substitution tests.
 
-- [ ] Add type variables and polymorphic type quantification (`!>`).
-- [ ] Add polymorphic declarations and explicit type arguments at use sites.
-- [ ] Model type substitution and alpha-renaming as pure operations with laws.
-- [ ] Extend validation for kind/arity errors, illegal type-variable scope, and invalid
+- [x] Add type variables and polymorphic type quantification (`!>`).
+- [x] Add polymorphic declarations and explicit type arguments at use sites.
+- [x] Model type substitution and alpha-renaming as pure operations with executable checks.
+- [x] Extend validation for kind/arity errors, illegal type-variable scope, and invalid
   instantiations.
-- [ ] Test monomorphic cases through the polymorphic path to prevent dialect drift.
+- [x] Test monomorphic cases through the polymorphic path to prevent dialect drift.
 
 Exit criterion: TFF1 examples round-trip with stable binders, substitutions preserve
-meaning, and invalid type scopes are rejected with positioned diagnostics.
+meaning, and invalid type scopes are rejected with useful diagnostics. Complete in
+v0.4.0 with the pinned TF1 fixture, conformance matrix, corpus runner, and CI checks.
 
 ## P3 — monomorphic typed higher-order form (THF0)
 

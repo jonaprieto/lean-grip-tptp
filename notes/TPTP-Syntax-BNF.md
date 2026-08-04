@@ -49,9 +49,9 @@ CNF variables are implicitly universally quantified.
 
 ## TFF / TF0
 
-This release implements the monomorphic TF0 profile of the TFF language. The
-official TFF productions also describe TF1 and TXF syntax; those extensions are
-not silently accepted by the TF0 parser.
+This section records the monomorphic TF0 profile of the TFF language. The
+polymorphic TF1 extensions supported by this release are documented below; TXF
+syntax remains outside the typed parser.
 
 ~~~bnf
 <tff_formula> ::= <tff_logic_formula>
@@ -100,6 +100,36 @@ symbols have at most one type, untyped symbols default to $i arguments, and
 equality/arithmetic operands have compatible types. The official type-system
 description is the reference for these rules, including $i, $o, $tType,
 default typing, and arithmetic overloads.
+
+## TFF / TF1
+
+TF1 extends the TF0 type grammar with rank-1 polymorphic signatures. The official
+semantic grammar is:
+
+~~~bnf
+<tff_top_level_type> ::= <tff_atomic_type> | <tff_mapping_type> |
+                         <tff_quantified_type> | (<tff_top_level_type>)
+<tff_quantified_type> ::= !> [<tff_variable_list>] : <tff_monotype>
+<tff_monotype> ::= <tff_atomic_type> | (<tff_mapping_type>)
+<tff_atomic_type> ::= <type_constant> | <defined_type> | <variable> |
+                      <type_functor>(<tff_type_arguments>)
+<tff_type_arguments> ::= <tff_atomic_type> |
+                         <tff_type_arguments>, <tff_atomic_type>
+~~~
+
+In TF1, type declarations introduce fixed-arity type constructors with mappings
+from `$tType`, e.g. `list: $tType > $tType` and
+`map: ($tType * $tType) > $tType`. A polymorphic declaration binds distinct type
+variables with `!>[A:$tType, ...]`; a polymorphic use supplies the instantiated
+types as the leading arguments, e.g. `lookup($int, list(A), M, 2)`. Formula
+quantifiers bind type variables with `![A:$tType]`. Type variables may not be
+introduced below a term-variable quantifier, and `$o`, `$tType`, and polymorphic
+quantifiers are not legal type arguments.
+
+`TPTP.TFF.TypeExpr` represents type applications and quantified signatures, while
+`TypeExpr.substitute` and `TypeExpr.alphaRename` provide the pure operations used
+by the validator and tests. The official BNF and type-system documentation remain
+authoritative; this note records the supported TF1 profile and its semantic checks.
 
 ## Shared lexical rules
 

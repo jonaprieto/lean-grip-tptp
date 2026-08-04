@@ -44,7 +44,7 @@ jobs:
         run: '! rg -n "\\bpartial\\s+(def|theorem)\\b" TPTP/Parse.lean TPTP/FirstOrder/Parse.lean TPTP/FOF/Parse.lean TPTP/CNF/Parse.lean TPTP/TFF/Parse.lean'
       - name: Run tests
         run: lake exe tests
-      - name: Run FOF/CNF/TFF conformance matrix
+      - name: Run FOF/CNF/TF1 conformance matrix
         run: lake exe conformance
       - name: Install E for differential checking
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y eprover
