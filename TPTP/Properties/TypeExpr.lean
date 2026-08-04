@@ -73,7 +73,8 @@ theorem freshName_not_mem (base : String) (used : Array String) :
 
 /-- The name selected for an alpha-renamed binder is outside the protected set. -/
 theorem alphaFreshName_not_mem (newName : String) (used : Array String) :
-    (if used.toList.contains newName then TypeExpr.Internal.freshName newName used else newName) ∉ used := by
+    (if used.toList.contains newName then TypeExpr.Internal.freshName newName used
+      else newName) ∉ used := by
   by_cases h : used.toList.contains newName = true
   · have hUsed : newName ∈ used :=
       Array.mem_def.mpr (List.contains_iff_mem.mp h)
@@ -85,10 +86,10 @@ theorem alphaFreshName_not_mem (newName : String) (used : Array String) :
     · simp [hNew] at hUsed
 
 theorem substitute_atom_equation (substitution : Array (String × TypeExpr))
-    (symbol : Symbol) :
+  (symbol : Symbol) :
     (TypeExpr.atom symbol).substitute substitution =
-      ((substitution.find? (fun pair : String × TypeExpr => pair.1 == symbol.raw)).map Prod.snd).getD
-        (.atom symbol) := by
+      ((substitution.find? (fun pair : String × TypeExpr => pair.1 == symbol.raw)).map
+        Prod.snd).getD (.atom symbol) := by
   simp [TypeExpr.substitute, TPTP.TFF.TypeExpr.Internal.substituteAux,
     TPTP.TFF.TypeExpr.Internal.substitutionLookup]
 

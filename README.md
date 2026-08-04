@@ -5,7 +5,7 @@ It is the small, reusable format layer for tools that need to read ATP problems 
 without depending on an online-prover client.
 
 [![CI](https://github.com/jonaprieto/lean-tptp/actions/workflows/ci.yml/badge.svg)](https://github.com/jonaprieto/lean-tptp/actions/workflows/ci.yml)
-[![Lean](https://img.shields.io/badge/Lean-v4.32.1-blue)](lean-toolchain)
+[![Lean](https://img.shields.io/badge/Lean-v4.32.2-blue)](lean-toolchain)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 ## Why a separate library?
@@ -21,7 +21,7 @@ Add the package to `lakefile.lean`:
 ```lean
 require tptp from git
   "https://github.com/jonaprieto/lean-tptp.git"
-  @ "main"
+  @ "v0.5.0"
 ```
 
 Parse a complete document or one statement. The envelope API returns Grip's positioned

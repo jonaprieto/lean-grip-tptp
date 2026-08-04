@@ -210,7 +210,7 @@ Difficulty: high. Verification confidence: medium-high after type substitution t
 
 Exit criterion: TFF1 examples round-trip with stable binders, substitutions preserve
 meaning, and invalid type scopes are rejected with useful diagnostics. Complete in
-v0.4.0 with the pinned TF1 fixture, conformance matrix, corpus runner, and CI checks.
+v0.5.0 with the pinned TF1 fixture, conformance matrix, corpus runner, and CI checks.
 
 ## P3 — monomorphic typed higher-order form (THF0)
 

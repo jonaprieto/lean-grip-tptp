@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+- Complete the TFF1 correctness pass for polymorphic type substitution, alpha-renaming,
+  explicit instantiation, type-constructor arity, and scoped validation.
+- Add executable property coverage for type-expression operations and regression checks for
+  parser, renderer, and validator behavior.
+- Bump the package and toolchain metadata to Lean 4.32.2.
+
 ## 0.4.0
 
 - Add TF1 rank-1 polymorphic types, fixed-arity constructors, explicit instantiation,

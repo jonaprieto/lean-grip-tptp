@@ -249,9 +249,10 @@ def renameBinderStep (replacementFree used : Array String)
   else
     (variables.push binder, body)
 
-private theorem depth_binderFold (replacementFree used : Array String) :
+  private theorem depth_binderFold (replacementFree used : Array String) :
     ∀ (variables : List TypeBinder) (initial : Array TypeBinder) (body : TypeExpr),
-      depth ((variables.foldl (renameBinderStep replacementFree used) (initial, body)).2) = depth body
+      depth ((variables.foldl (renameBinderStep replacementFree used) (initial, body)).2) =
+        depth body
   | [], initial, body => rfl
   | binder :: variables, initial, body => by
       simp only [List.foldl_cons]
@@ -288,7 +289,8 @@ def substituteAux (type : TypeExpr) (substitution : Array (String × TypeExpr)) 
       let boundNames := variables.toList.map TypeBinder.name |>.toArray
       let substitutionNames := substitution.map Prod.fst
       let used := ((variables.toList.map TypeBinder.name).toArray ++
-        binderNamesAux sourceBody ++ freeVariablesAux sourceBody ++ substitutionNames ++ replacementFree)
+        binderNamesAux sourceBody ++ freeVariablesAux sourceBody ++ substitutionNames ++
+          replacementFree)
       let filtered := substitution.filter (fun pair =>
         !boundNames.toList.contains pair.1)
       .forall
@@ -343,7 +345,8 @@ def TypeExpr.alphaRename (oldName newName : String) : TypeExpr → TypeExpr := f
         if variables.any (fun binder => binder.name == oldName) then
           let used := ((variables.toList.map TypeBinder.name).toArray ++
             Internal.binderNamesAux body ++ Internal.freeVariablesAux body)
-          let fresh := if used.toList.contains newName then Internal.freshName newName used else newName
+          let fresh :=
+            if used.toList.contains newName then Internal.freshName newName used else newName
           .forall (variables.map (fun binder =>
             if binder.name == oldName then { binder with name := fresh } else binder))
             (Internal.renameBound oldName fresh body)
