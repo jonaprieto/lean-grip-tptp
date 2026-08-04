@@ -62,6 +62,8 @@ partial def Formula.render : Formula → String
       s!"! [{join (variables.map renderVariable)}] : ({body.render})"
   | .exists variables body =>
       s!"? [{join (variables.map renderVariable)}] : ({body.render})"
+  | .unique variables body =>
+      s!"# [{join (variables.map renderVariable)}] : ({body.render})"
 
 instance : ToString Formula where
   toString := Formula.render

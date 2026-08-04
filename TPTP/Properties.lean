@@ -5,3 +5,4 @@ Authors: Jonathan Prieto-Cubides
 -/
 
 import TPTP.Properties.Basic
+import TPTP.Properties.TypeExpr

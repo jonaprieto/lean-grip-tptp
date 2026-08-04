@@ -71,12 +71,32 @@ instance : Inhabited Signature := ⟨{}⟩
 private def lookup (signature : Signature) (name : String) : Option Declaration :=
   signature.declarations.find? (fun declaration => declaration.symbol.raw == name)
 
+private def canonicalTypeName : String → String
+  | "$iType" => "$i"
+  | "$oType" => "$o"
+  | name => name
+
+private def canonicalType : TypeExpr → TypeExpr
+  | .atom symbol => .atom { symbol with raw := canonicalTypeName symbol.raw }
+  | .application constructor arguments =>
+      .application { constructor with raw := canonicalTypeName constructor.raw }
+        (arguments.map canonicalType)
+  | .product elements => .product (elements.map canonicalType)
+  | .mapping arguments result =>
+      .mapping (arguments.map canonicalType) (canonicalType result)
+  | .forall variables body => .forall variables (canonicalType body)
+
+private def canonicalSignature (signature : Signature) : Signature :=
+  { declarations := signature.declarations.map fun declaration =>
+      { declaration with type := canonicalType declaration.type } }
+
 private def add (signature : Signature) (declaration : Declaration) :
     Except ValidationError Signature :=
+  let declaration := { declaration with type := canonicalType declaration.type }
   match lookup signature declaration.symbol.raw with
   | none => .ok { declarations := signature.declarations.push declaration }
   | some previous =>
-      if previous.type == declaration.type then
+      if previous.type.alphaEquivalent declaration.type then
         .ok signature
       else
         .error (.conflictingDeclaration declaration.symbol.raw previous.type declaration.type)
@@ -85,16 +105,16 @@ private def atom (name : String) : TypeExpr :=
   .atom { raw := name }
 
 private def isBuiltinType (name : String) : Bool :=
-  ["$i", "$o", "$tType", "$int", "$rat", "$real"].contains name
+  ["$i", "$o", "$iType", "$oType", "$tType", "$int", "$rat", "$real"].contains name
 
 private def isBoolean (type : TypeExpr) : Bool :=
-  type == atom "$o"
+  canonicalType type == atom "$o"
 
 private def isKind (type : TypeExpr) : Bool :=
-  type == atom "$tType"
+  canonicalType type == atom "$tType"
 
 private def isNumeric (type : TypeExpr) : Bool :=
-  ["$int", "$rat", "$real"].contains (match type with
+  ["$int", "$rat", "$real"].contains (match canonicalType type with
     | .atom symbol => symbol.raw
     | _ => "")
 
@@ -115,6 +135,7 @@ private def sameTypes (types : Array TypeExpr) : Option TypeExpr :=
 
 private def checkSame (context : String) (types : Array TypeExpr) :
     Except ValidationError TypeExpr :=
+  let types := types.map canonicalType
   match sameTypes types with
   | some type => .ok type
   | none =>
@@ -127,6 +148,8 @@ private def checkSame (context : String) (types : Array TypeExpr) :
 
 private def checkArguments (name : String) (expected : Array TypeExpr)
     (actual : Array TypeExpr) : Except ValidationError Unit := do
+  let expected := expected.map canonicalType
+  let actual := actual.map canonicalType
   let _ ← checkArity name expected.size actual.size
   for pair in expected.zip actual do
     if pair.1 != pair.2 then
@@ -147,7 +170,7 @@ private def firstDuplicate : List String → Option String
 
 private partial def typeKnown (signature : Signature) (typeVariables : List String)
     (type : TypeExpr) : Except ValidationError Unit :=
-  match type with
+  match canonicalType type with
   | .atom symbol =>
       if typeVariables.contains symbol.raw then
         pure ()
@@ -370,9 +393,11 @@ private partial def applyDeclared (signature : Signature) (typeVariables : List 
   match lookup signature symbol.raw with
   | none =>
       let (types, signature) ← checkTerms signature typeVariables variables arguments.toList
-      let declaration := { symbol, type := defaultType types.size defaultResult }
+      let inferred := defaultType types.size defaultResult
+      let result ← applyMonotype symbol.raw inferred types
+      let declaration := { symbol, type := inferred }
       let signature ← add signature declaration
-      pure (defaultResult, signature)
+      pure (result, signature)
   | some declaration =>
       match declaration.type with
       | .forall binders body =>
@@ -459,14 +484,14 @@ private def checkBinders (signature : Signature) (typeVariables : List String)
   | some name => throw (.duplicateBinder name)
   | none => pure ()
   let localTypeVariables := variables.toList.filterMap fun binder =>
-    if binder.type == some (atom "$tType") then some binder.name else none
+    if binder.type.map canonicalType == some (atom "$tType") then some binder.name else none
   if !termVariables.isEmpty && !localTypeVariables.isEmpty then
     throw .invalidTypeScope
   let typeScope := localTypeVariables ++ typeVariables
   let mut terms : List (String × TypeExpr) := []
   let mut termSeen := false
   for binder in variables do
-    let type := binder.type.getD (atom "$i")
+    let type := canonicalType (binder.type.getD (atom "$i"))
     if isKind type then
       if termSeen then throw .invalidTypeScope
       if typeVariables.contains binder.name || termVariables.any (·.1 == binder.name) then
@@ -493,20 +518,22 @@ private partial def checkFormula (signature : Signature) (typeVariables : List S
   | .nand left right => do
       let signature ← checkFormula signature typeVariables variables left
       checkFormula signature typeVariables variables right
-  | .forall binders body | .exists binders body => do
+  | .forall binders body | .exists binders body | .unique binders body => do
       let (terms, types) ← checkBinders signature typeVariables variables binders
       checkFormula signature (types ++ typeVariables) (terms ++ variables) body
 
 /-- Validate a TF0/TF1 declaration and return the updated signature. -/
 def validateDeclaration (signature : Signature) (declaration : Declaration) :
     Except ValidationError Signature := do
+  let signature := canonicalSignature signature
+  let declaration := { declaration with type := canonicalType declaration.type }
   let _ ← validateSignatureType signature declaration
   add signature declaration
 
 /-- Validate one typed formula and return the signature including inferred defaults. -/
 def validateFormula (signature : Signature) (formula : Formula) :
     Except ValidationError Signature :=
-  checkFormula signature [] [] formula
+  checkFormula (canonicalSignature signature) [] [] formula
 
 /-- Validate one parsed typed body and return the updated signature. -/
 def validateBody (signature : Signature) : Body → Except ValidationError Signature

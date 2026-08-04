@@ -72,13 +72,18 @@ private def typeParser : P TypeExpr :=
       grade_by by decide
     GParser.chooseG quantified [mapping]
 
-private def typeDeclaration : P Declaration := gdo
+private def typeDeclarationAtom : P Declaration := gdo
   let symbol ← FirstOrder.Parser.symbol
   let _ ← GParser.ch ':'
   let _ ← trivia
   let type ← typeParser
   return { symbol, type }
   grade_by by decide
+
+private def typeDeclaration : P Declaration :=
+  GParser.chooseG
+    (GParser.ch '(' *> trivia *> typeDeclarationAtom <* GParser.ch ')' <* trivia)
+    [typeDeclarationAtom]
 
 private def atomFormula : P Formula :=
   FirstOrder.Parser.atom.map fun value =>
@@ -159,6 +164,8 @@ private def formulaParser : P Formula :=
           binder Formula.forall '!' unitFormula
         else if byte == Ascii.code '?' then
           binder Formula.exists '?' unitFormula
+        else if byte == Ascii.code '#' then
+          binder Formula.unique '#' unitFormula
         else if byte == Ascii.lparen then
           GParser.ch '(' *> trivia *> formula <* GParser.ch ')' <* trivia
         else

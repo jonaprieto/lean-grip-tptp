@@ -238,8 +238,62 @@ private def checkTFF : IO Unit := do
     | .error error => throw (IO.userError (error.pretty "owns: (human * cat) > $o".toUTF8))
   let declarationRendered := declaration.render
   match TFF.parseTypeDeclarationString declarationRendered with
-  | .ok reparsed => check (reparsed == declaration) "TFF declaration parse/render/parse"
-  | .error error => throw (IO.userError (error.pretty declarationRendered.toUTF8))
+    | .ok reparsed => check (reparsed == declaration) "TFF declaration parse/render/parse"
+    | .error error => throw (IO.userError (error.pretty declarationRendered.toUTF8))
+  let parenthesized ← match TFF.parseTypeDeclarationString "(p: $o)" with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty "(p: $o)".toUTF8))
+  check (parenthesized.symbol.raw == "p" && parenthesized.type == .atom { raw := "$o" })
+    "TFF parenthesized type declaration"
+  let aliasBodies : Array TFF.Body := #[
+    .declaration { symbol := { raw := "a" }, type := .atom { raw := "$iType" } },
+    .declaration { symbol := { raw := "p" }, type := .atom { raw := "$oType" } }
+  ]
+  match TFF.validateDocument aliasBodies with
+  | .ok signature =>
+      check (signature.declarations[0]?.map (·.type) == some (.atom { raw := "$i" }))
+        "TFF $iType alias"
+      check (signature.declarations[1]?.map (·.type) == some (.atom { raw := "$o" }))
+        "TFF $oType alias"
+  | .error error => throw (IO.userError s!"TFF type aliases: {error}")
+  match TFF.parseFormulaString "p(1)" with
+  | .ok formula =>
+      match TFF.validateFormula {} formula with
+      | .ok _ => throw (IO.userError "TFF default typing accepted p(1)")
+      | .error _ => pure ()
+  | .error error => throw (IO.userError (error.pretty "p(1)".toUTF8))
+  let alphaDeclarationA : TFF.Body := .declaration
+    { symbol := { raw := "poly" },
+      type := .forall #[{ name := "A" }]
+        (.mapping #[.atom { raw := "A" }] (.atom { raw := "A" })) }
+  let alphaDeclarationB : TFF.Body := .declaration
+    { symbol := { raw := "poly" },
+      type := .forall #[{ name := "B" }]
+        (.mapping #[.atom { raw := "B" }] (.atom { raw := "B" })) }
+  match TFF.validateDocument #[alphaDeclarationA, alphaDeclarationB] with
+  | .ok signature =>
+      check (signature.declarations.size == 1) "TFF polymorphic declaration alpha-equivalence"
+  | .error error => throw (IO.userError s!"TFF alpha-equivalent declarations: {error}")
+  let hashFormula ← match TFF.parseFormulaString "#[X:$i] : p(X)" with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty "#[X:$i] : p(X)".toUTF8))
+  check (hashFormula.render.startsWith "# [X: $i]") "TFF hash quantifier rendering"
+  match TFF.validateFormula {} hashFormula with
+  | .ok _ => pure ()
+  | .error error => throw (IO.userError s!"TFF hash quantifier validation: {error}")
+  let quotedFormula ← match TFF.parseFormulaString "'p'" with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty "'p'".toUTF8))
+  let quotedSignature : TFF.Signature := { declarations := #[
+    { symbol := { raw := "'p'" }, type := .atom { raw := "$o" } }] }
+  match TFF.validateFormula quotedSignature quotedFormula with
+  | .ok _ => pure ()
+  | .error error => throw (IO.userError s!"TFF quoted symbol validation: {error}")
+  let unknownTypeBody : Array TFF.Body := #[.declaration
+    { symbol := { raw := "bad" }, type := .atom { raw := "Missing" } }]
+  match TFF.validateDocument unknownTypeBody with
+  | .ok _ => throw (IO.userError "TFF accepted an unknown type constructor")
+  | .error _ => pure ()
   for input in [
       "![X:human] : p(X)", "p(1) = $sum(1, 2)", "$distinct(1, 2)",
       "![X] : p(X)", "p(a) | ~q(a)", "p != q", "p ~| q", "p ~& q"
@@ -361,6 +415,19 @@ private def checkTFF : IO Unit := do
   let expectedCaptured : TFF.TypeExpr := .forall #[{ name := "B_1" }]
     (.application { raw := "list" } #[.atom { raw := "B" }, .atom { raw := "B_1" }])
   check (captured == expectedCaptured) "TF1 capture-avoiding substitution"
+  let multiCollision : TFF.TypeExpr := .forall #[{ name := "B" }]
+    (.application { raw := "list" } #[.atom { raw := "A" }, .atom { raw := "B_1" }])
+  let multiCollisionResult := multiCollision.substitute
+    #[("A", .atom { raw := "B" }), ("B_1", .atom { raw := "C" })]
+  check (multiCollisionResult == .forall #[{ name := "B_2" }]
+      (.application { raw := "list" } #[.atom { raw := "B" }, .atom { raw := "C" }]))
+    "TF1 substitution avoids keys and free body names"
+  let freeBodyCollision : TFF.TypeExpr := .forall #[{ name := "B" }]
+    (.application { raw := "list" } #[.atom { raw := "B" }, .atom { raw := "B_1" }])
+  check (freeBodyCollision.substitute #[("A", .atom { raw := "B" })] ==
+      .forall #[{ name := "B_2" }]
+        (.application { raw := "list" } #[.atom { raw := "B_2" }, .atom { raw := "B_1" }]))
+    "TF1 substitution avoids free body names"
   check (quantified.freeVariables == #["A"]) "TF1 free type variables"
   let renamed := quantified.alphaRename "B" "C"
   let expectedRenamed : TFF.TypeExpr := .forall #[{ name := "C" }]
@@ -370,6 +437,12 @@ private def checkTFF : IO Unit := do
       (.application { raw := "list" } #[.atom { raw := "A" }])).alphaRename "A" "B"
   check (renamed == .forall #[{ name := "B" }]
       (.application { raw := "list" } #[.atom { raw := "B" }])) "TF1 alpha renaming"
+  let alphaFreeBodyCollision : TFF.TypeExpr := .forall #[{ name := "A" }]
+    (.application { raw := "list" } #[.atom { raw := "A" }, .atom { raw := "B" }])
+  check (alphaFreeBodyCollision.alphaRename "A" "B" ==
+      .forall #[{ name := "B_1" }]
+        (.application { raw := "list" } #[.atom { raw := "B_1" }, .atom { raw := "B" }]))
+    "TF1 alpha renaming avoids free body names"
 
 def main : IO Unit := do
   checkDocument
