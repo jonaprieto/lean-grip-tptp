@@ -190,12 +190,14 @@ private def tffFormulaAccepted : List (String × String) := [
   ("conjunction", "p & q"),
   ("implication", "p => q"),
   ("nor", "p ~| q"),
-  ("nand", "p ~& q")
+  ("nand", "p ~& q"),
+  ("vacuous type variable", "![A:$tType] : $true")
 ]
 
 private def tffFormulaRejected : List (String × String) := [
   ("polymorphic binder", "!>[A:$tType] : p"),
-  ("type variable in TF0", "![A:$tType] : $true"),
+  ("type variable used as term", "![A:$tType] : p(A)"),
+  ("nested type-variable scope", "![X:$i] : (![A:$tType] : $true)"),
   ("boolean term tuple", "[a, b] = c"),
   ("conditional term", "$ite(p, a, b) = a"),
   ("subtype", "a << b"),
@@ -209,7 +211,9 @@ private def tffDeclarationAccepted : List (String × String) := [
   ("integer constant", "zero: $int"),
   ("unary function", "succ: $int > $int"),
   ("binary function", "plus: ($int * $int) > $int"),
-  ("predicate", "less: ($int * $int) > $o")
+  ("predicate", "less: ($int * $int) > $o"),
+  ("type constructor", "list: $tType > $tType"),
+  ("polymorphic identity", "identity: !>[A:$tType] : (A > A)")
 ]
 
 private def tffDeclarationRejected : List (String × String) := [
@@ -218,6 +222,48 @@ private def tffDeclarationRejected : List (String × String) := [
   ("bare product", "pair: ($int * $int)"),
   ("unknown result type", "f: $unknown > $int")
 ]
+
+private def checkTF1 : IO Unit := do
+  let sources := [
+    "tff(list_type,type,list: $tType > $tType).",
+    "tff(is_empty_type,type,is_empty: !>[A:$tType] : (list(A) > $o)).",
+    "tff(cons_type,type,cons: !>[A:$tType] : ((A * list(A)) > list(A))).",
+    "tff(nil_type,type,nil: !>[A:$tType] : list(A))."
+  ]
+  let mut bodies : Array TFF.Body := #[]
+  for source in sources do
+    let statement ← match parseStatementString source with
+      | .ok value => pure value
+      | .error error => throw (IO.userError (error.pretty source.toUTF8))
+    let body ← match TFF.parseStatementBody statement with
+      | .ok value => pure value
+      | .error (.syntax error) => throw (IO.userError (error.pretty source.toUTF8))
+      | .error (.wrongKind expected actual) =>
+          throw (IO.userError s!"expected {expected}, found {actual}")
+    bodies := bodies.push body
+  let signature ← match TFF.validateDocument bodies with
+    | .ok value => pure value
+    | .error error => throw (IO.userError s!"TF1 declaration validation: {error}")
+  let formulaSource := "![A:$tType,X:A,Xs:list(A)] : is_empty(A,cons(A,X,Xs))"
+  let formula ← match TFF.parseFormulaString formulaSource with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty formulaSource.toUTF8))
+  match TFF.validateFormula signature formula with
+  | .ok _ => pure ()
+  | .error error => throw (IO.userError s!"TF1 formula validation: {error}")
+  let badSource := "![A:$tType] : is_empty(A)"
+  let badFormula ← match TFF.parseFormulaString badSource with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty badSource.toUTF8))
+  match TFF.validateFormula signature badFormula with
+  | .error _ => pure ()
+  | .ok _ => throw (IO.userError "TF1 accepted a missing explicit type argument")
+  let badType ← match TFF.parseTypeDeclarationString "bad: list($int, $real)" with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty "bad: list($int, $real)".toUTF8))
+  match TFF.validateDeclaration signature badType with
+  | .error _ => pure ()
+  | .ok _ => throw (IO.userError "TF1 accepted a type constructor with the wrong arity")
 
 private def checkTFF : IO Unit := do
   for (label, source) in tffFormulaAccepted do
@@ -248,6 +294,7 @@ private def checkTFF : IO Unit := do
   | .error (.conflictingDeclaration "p" _ _) => pure ()
   | .error error => throw (IO.userError s!"wrong TFF conflict error: {error}")
   | .ok _ => throw (IO.userError "TFF accepted a conflicting default declaration")
+  checkTF1
 
 private def checkValidation : IO Unit := do
   let valid := FOF.Formula.atom

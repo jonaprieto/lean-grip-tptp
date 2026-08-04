@@ -16,7 +16,11 @@ private def source : String :=
     "tff(nat_type, type, nat: $tType).\n" ++
     "tff(zero_type, type, zero: nat).\n" ++
     "tff(add_type, type, add: (nat * nat) > nat).\n" ++
-    "tff(goal_tff, conjecture, ! [X:nat] : add(X,zero) = X).\n"
+    "tff(goal_tff, conjecture, ! [X:nat] : add(X,zero) = X).\n" ++
+    "tff(list_type, type, list: $tType > $tType).\n" ++
+    "tff(nil_type, type, nil: !>[A:$tType] : list(A)).\n" ++
+    "tff(empty_type, type, empty: !>[A:$tType] : (list(A) > $o)).\n" ++
+    "tff(tf1_goal, conjecture, ![A:$tType] : empty(A,nil(A))).\n"
 
 private def printStatement (statement : Statement) : IO Unit := do
   IO.println s!"{statement.kind} {statement.name}: {statement.formula}"

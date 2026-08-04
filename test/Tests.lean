@@ -267,6 +267,109 @@ private def checkTFF : IO Unit := do
       | .ok _ => throw (IO.userError "TFF accepted a formula with an unknown type")
       | .error _ => pure ()
   | .error error => throw (IO.userError (error.pretty "![X:human] : p(X)".toUTF8))
+  let polymorphicSource := [
+    "tff(bird_type,type,bird: $tType).",
+    "tff(list_type,type,list: $tType > $tType).",
+    "tff(map_type,type,map: ($tType * $tType) > $tType).",
+    "tff(is_empty_type,type,is_empty: !>[A:$tType] : (list(A) > $o)).",
+    "tff(cons_type,type,cons: !>[A:$tType] : ((A * list(A)) > list(A))).",
+    "tff(nil_type,type,nil: !>[A:$tType] : list(A)).",
+    "tff(identity_type,type,identity: !>[A:$tType] : (A > A)).",
+    "tff(lookup_type,type,lookup: !>[A:$tType,B:$tType] : ((map(A,B) * A) > B))."
+  ]
+  let mut polymorphicBodies : Array TFF.Body := #[]
+  for line in polymorphicSource do
+    let statement ← match parseStatementString line with
+      | .ok value => pure value
+      | .error error => throw (IO.userError (error.pretty line.toUTF8))
+    let body ← match TFF.parseStatementBody statement with
+      | .ok value => pure value
+      | .error (.syntax error) =>
+          throw (IO.userError (error.pretty statement.formula.toUTF8))
+      | .error (.wrongKind expected actual) =>
+          throw (IO.userError s!"kind error: {expected} vs {actual}")
+    polymorphicBodies := polymorphicBodies.push body
+  let polymorphicSignature ← match TFF.validateDocument polymorphicBodies with
+    | .ok value => pure value
+    | .error error => throw (IO.userError s!"TF1 validation: {error}")
+  check (polymorphicSignature.declarations.size == 8) "TF1 declaration count"
+  let polymorphicFormula := "![A:$tType,X:A,Xs:list(A)] : is_empty(A,cons(A,X,Xs))"
+  let formula ← match TFF.parseFormulaString polymorphicFormula with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty polymorphicFormula.toUTF8))
+  match TFF.validateFormula polymorphicSignature formula with
+  | .ok _ => pure ()
+  | .error error => throw (IO.userError s!"TF1 formula validation: {error}")
+  let renderedPolymorphic := formula.render
+  match TFF.parseFormulaString renderedPolymorphic with
+  | .ok reparsed => check (reparsed == formula) "TF1 formula parse/render/parse"
+  | .error error => throw (IO.userError (error.pretty renderedPolymorphic.toUTF8))
+  let polymorphicDeclaration ← match
+      TFF.parseTypeDeclarationString "nil: !>[A:$tType] : list(A)" with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty "nil: !>[A:$tType] : list(A)".toUTF8))
+  let renderedDeclaration := polymorphicDeclaration.render
+  match TFF.parseTypeDeclarationString renderedDeclaration with
+  | .ok reparsed => check (reparsed == polymorphicDeclaration) "TF1 declaration parse/render/parse"
+  | .error error => throw (IO.userError (error.pretty renderedDeclaration.toUTF8))
+  let identityFormula := "![A:$tType,X:A] : identity(A,X) = X"
+  let identity ← match TFF.parseFormulaString identityFormula with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty identityFormula.toUTF8))
+  match TFF.validateFormula polymorphicSignature identity with
+  | .ok _ => pure ()
+  | .error error => throw (IO.userError s!"TF1 identity validation: {error}")
+  let lookupFormula :=
+    "![A:$tType,B:$tType,M:map(A,B),K:A,V:B] : lookup(A,B,M,K) = V"
+  let lookup ← match TFF.parseFormulaString lookupFormula with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty lookupFormula.toUTF8))
+  match TFF.validateFormula polymorphicSignature lookup with
+  | .ok _ => pure ()
+  | .error error => throw (IO.userError s!"TF1 lookup validation: {error}")
+  let identityRendered := identity.render
+  match TFF.parseFormulaString identityRendered with
+  | .ok reparsed => check (reparsed == identity) "TF1 formula render/parse"
+  | .error error => throw (IO.userError (error.pretty identityRendered.toUTF8))
+  let polymorphicDeclaration ← match TFF.parseTypeDeclarationString
+      "identity: !>[A:$tType] : (A > A)" with
+    | .ok value => pure value
+    | .error error => throw (IO.userError (error.pretty "identity: !>[A:$tType] : (A > A)".toUTF8))
+  match TFF.parseTypeDeclarationString polymorphicDeclaration.render with
+  | .ok reparsed => check (reparsed == polymorphicDeclaration) "TF1 declaration render/parse"
+  | .error error => throw (IO.userError (error.pretty polymorphicDeclaration.render.toUTF8))
+  for (label, source) in [
+      ("missing type argument", "![X:$int] : identity(X) = X"),
+      ("wrong type argument", "identity($o, $true) = $true"),
+      ("unknown type argument", "identity(unknown, a) = a"),
+      ("wrong constructor arity", "![A:$tType,X:A] : is_empty(list(A), X)"),
+      ("type variable as term", "![A:$tType] : identity(A, A) = A")
+    ] do
+    match TFF.parseFormulaString source with
+    | .ok value =>
+        match TFF.validateFormula polymorphicSignature value with
+        | .ok _ => throw (IO.userError s!"TF1 accepted {label}: {source}")
+        | .error _ => pure ()
+    | .error _ => pure ()
+  let substituted := (TFF.TypeExpr.application { raw := "list" } #[.atom { raw := "A" }]).substitute
+    #[("A", .atom { raw := "$int" })]
+  check (substituted == .application { raw := "list" } #[.atom { raw := "$int" }])
+    "TF1 type substitution"
+  let quantified : TFF.TypeExpr := .forall #[{ name := "B" }]
+    (.application { raw := "list" } #[.atom { raw := "A" }, .atom { raw := "B" }])
+  let captured := quantified.substitute #[("A", .atom { raw := "B" })]
+  let expectedCaptured : TFF.TypeExpr := .forall #[{ name := "B_1" }]
+    (.application { raw := "list" } #[.atom { raw := "B" }, .atom { raw := "B_1" }])
+  check (captured == expectedCaptured) "TF1 capture-avoiding substitution"
+  check (quantified.freeVariables == #["A"]) "TF1 free type variables"
+  let renamed := quantified.alphaRename "B" "C"
+  let expectedRenamed : TFF.TypeExpr := .forall #[{ name := "C" }]
+    (.application { raw := "list" } #[.atom { raw := "A" }, .atom { raw := "C" }])
+  check (renamed == expectedRenamed) "TF1 alpha renaming"
+  let renamed := (TFF.TypeExpr.forall #[{ name := "A" }]
+      (.application { raw := "list" } #[.atom { raw := "A" }])).alphaRename "A" "B"
+  check (renamed == .forall #[{ name := "B" }]
+      (.application { raw := "list" } #[.atom { raw := "B" }])) "TF1 alpha renaming"
 
 def main : IO Unit := do
   checkDocument
