@@ -8,7 +8,7 @@ import TPTP.TFF
 import TPTP.FirstOrder.Render
 
 /-!
-# TPTP.TFF.Render: canonical TF0 rendering
+# TPTP.TFF.Render: canonical TF0/TF1 rendering
 -/
 
 namespace TPTP.TFF
@@ -19,8 +19,13 @@ private def join (values : Array String) : String :=
 private def joinProduct (values : Array String) : String :=
   String.intercalate " * " values.toList
 
+private def renderTypeBinder (binder : TypeBinder) : String :=
+  s!"{binder.name}: $tType"
+
 partial def TypeExpr.render : TypeExpr → String
   | .atom symbol => symbol.render
+  | .application constructor arguments =>
+      s!"{constructor.render}({String.intercalate ", " (arguments.toList.map TypeExpr.render)})"
   | .product elements => s!"({joinProduct (elements.map TypeExpr.render)})"
   | .mapping arguments result =>
       let domain := if arguments.size == 1 then
@@ -28,6 +33,11 @@ partial def TypeExpr.render : TypeExpr → String
       else
         s!"({joinProduct (arguments.map TypeExpr.render)})"
       s!"{domain} > {result.render}"
+  | .forall variables body =>
+      let body := match body with
+        | .mapping _ _ => s!"({body.render})"
+        | _ => body.render
+      s!"!>[{String.intercalate ", " (variables.toList.map renderTypeBinder)}] : {body}"
 
 instance : ToString TypeExpr where
   toString := TypeExpr.render

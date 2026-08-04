@@ -9,11 +9,11 @@ import TPTP.FirstOrder.Parse
 import TPTP.Syntax
 
 /-!
-# TPTP.TFF.Parse: total TF0 parser
+# TPTP.TFF.Parse: total TF0/TF1 parser
 
-The parser follows the monomorphic typed first-order fragment. Type constructors,
-polymorphic binders, FOOL terms, and subtypes are deliberately outside this
-module's profile and are rejected by the grammar rather than reinterpreted.
+The parser follows the typed first-order fragments. FOOL terms, and subtypes are
+deliberately outside this module's profile and are rejected by the grammar rather
+than reinterpreted.
 -/
 
 namespace TPTP.TFF
@@ -24,25 +24,53 @@ open TPTP.FirstOrder.Parser
 
 abbrev P (α : Type) := GParser conditional α
 
-private def atomType : P TypeExpr :=
-  TypeExpr.atom <$> FirstOrder.Parser.symbol
+private def typeSymbol : P Symbol :=
+  GParser.chooseG (Symbol.mk <$> variableParser) [FirstOrder.Parser.symbol]
 
 private def typeParser : P TypeExpr :=
   GParser.fix fun recursive =>
+    let typeArguments : P (Array TypeExpr) :=
+      List.toArray <$> (GParser.ch '(' *> trivia *>
+        GParser.sepBy1 recursive (GParser.ch ',' *> trivia) <* GParser.ch ')' <* trivia)
+    let typeAtom : P TypeExpr := gdo
+      let symbol ← typeSymbol
+      let arguments ← GParser.optional typeArguments
+      return arguments.map (TypeExpr.application symbol) |>.getD (.atom symbol)
+      grade_by by decide
     let parenthesized : P TypeExpr :=
       GParser.ch '(' *> trivia *> recursive <* GParser.ch ')' <* trivia
     let unitary : P TypeExpr :=
-      GParser.dispatch fun byte =>
-        if byte == Ascii.lparen then parenthesized else atomType
+      GParser.dispatch fun byte => if byte == Ascii.lparen then parenthesized else typeAtom
     let product : P TypeExpr := gdo
       let first ← unitary
       let rest ← GParser.many (GParser.ch '*' *> trivia *> unitary)
       return if rest.isEmpty then first else .product (List.toArray (first :: rest))
       grade_by by decide
-    GParser.map2 (fun left right => right.map (TypeExpr.mapping (match left with
+    let mapping := GParser.map2 (fun left right => right.map (TypeExpr.mapping (match left with
       | .product values => values
       | value => #[value])) |>.getD left)
       product (GParser.optional (GParser.ch '>' *> trivia *> recursive))
+    let typeBinder : P TypeBinder := gdo
+      let name ← variableParser
+      let _ ← GParser.ch ':'
+      let _ ← trivia
+      let _ ← GParser.string "$tType"
+      let _ ← trivia
+      return { name }
+      grade_by by decide
+    let typeBinders : P (Array TypeBinder) :=
+      List.toArray <$> (GParser.ch '[' *> trivia *>
+        GParser.sepBy1 typeBinder (GParser.ch ',' *> trivia) <* GParser.ch ']' <* trivia)
+    let quantified : P TypeExpr := gdo
+      let _ ← GParser.string "!>"
+      let _ ← trivia
+      let variables ← typeBinders
+      let _ ← GParser.ch ':'
+      let _ ← trivia
+      let body ← recursive
+      return .forall variables body
+      grade_by by decide
+    GParser.chooseG quantified [mapping]
 
 private def typeDeclaration : P Declaration := gdo
   let symbol ← FirstOrder.Parser.symbol
@@ -66,7 +94,7 @@ private def atomFormula : P Formula :=
 
 private def typedVariable : P TypedVariable := gdo
   let name ← variableParser
-  let type ← GParser.optional (GParser.ch ':' *> trivia *> atomType)
+  let type ← GParser.optional (GParser.ch ':' *> trivia *> typeParser)
   return { name, type }
   grade_by by decide
 
