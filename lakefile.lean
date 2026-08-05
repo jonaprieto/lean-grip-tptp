@@ -2,12 +2,12 @@ import Lake
 open Lake DSL
 
 package «tptp» where
-  version := v!"0.5.0"
+  version := v!"0.5.1"
   leanOptions := #[⟨`autoImplicit, false⟩, ⟨`relaxedAutoImplicit, false⟩]
 
 require grip from git
   "https://github.com/jonaprieto/lean-grip.git"
-  @ "17bed154d8188650bf8dd458ec44385ce72d6ba4"
+  @ "v0.1.0"
 
 @[default_target]
 lean_lib «TPTP» where
