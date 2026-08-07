@@ -8,7 +8,7 @@ import sys
 typed = len(sys.argv) > 1 and sys.argv[1] == "--typed"
 paths = sys.argv[2:] if typed else sys.argv[1:]
 if len(paths) != 1:
-    raise SystemExit("usage: scripts/test-corpus.py [--typed] PATH")
+    raise SystemExit("usage: tools/test-corpus.py [--typed] PATH")
 
 root = pathlib.Path(paths[0])
 if not root.is_dir():

@@ -43,8 +43,8 @@ Run the local gate with:
 lake build TPTP TPTP.Properties demo tests conformance corpus
 lake exe tests
 lake exe conformance
-python3 scripts/test-corpus.py --typed test/fixtures
-python3 scripts/test-differential.py test/fixtures/differential
+python3 tools/test-corpus.py --typed test/fixtures
+python3 tools/test-differential.py test/fixtures/differential
 ```
 
 The E check is deliberately optional locally because E is not a library dependency. CI
