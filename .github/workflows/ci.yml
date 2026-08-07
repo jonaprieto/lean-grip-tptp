@@ -38,6 +38,8 @@ jobs:
         with:
           lake-package-directory: .
           build-args: "TPTP TPTP.Properties demo tests conformance corpus"
+      - name: Materialize properties for axiom audit
+        run: lake build TPTP.Properties.Basic
       - uses: jonaprieto/precommit-lean/.github/actions/precommit@v0.1.3
         with:
           token: ${{ secrets.ECOSYSTEM_READ_TOKEN }}
