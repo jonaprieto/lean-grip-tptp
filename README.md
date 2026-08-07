@@ -6,8 +6,6 @@
 
 Total TPTP/TSTP parsing for Lean 4, backed by [`grip`](https://github.com/jonaprieto/lean-grip).
 
-Version: `v0.5.1`
-
 ## Install
 
 ```lean
