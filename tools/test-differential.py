@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 if len(sys.argv) != 2:
-    raise SystemExit("usage: scripts/test-differential.py PATH")
+    raise SystemExit("usage: tools/test-differential.py PATH")
 
 root = pathlib.Path(sys.argv[1])
 files = sorted(path for path in root.rglob("*") if path.is_file())

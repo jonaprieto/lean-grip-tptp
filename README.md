@@ -54,13 +54,13 @@ Run the public [`jonaprieto/prop-pack`](https://github.com/jonaprieto/prop-pack)
 corpus when it is checked out:
 
 ```text
-python3 scripts/test-corpus.py ../prop-pack
+python3 tools/test-corpus.py ../prop-pack
 ```
 
 The typed fixture corpus exercises the FOF/CNF ASTs and validators, plus TF0/TF1 TFF:
 
 ```text
-python3 scripts/test-corpus.py --typed test/fixtures
+python3 tools/test-corpus.py --typed test/fixtures
 ```
 
 The FOF/CNF conformance matrix is checked against the versioned BNF reference:
@@ -76,7 +76,7 @@ The optional differential check uses E's independent TPTP parser for a conservat
 subset when `eprover` is installed:
 
 ```text
-python3 scripts/test-differential.py test/fixtures/differential
+python3 tools/test-differential.py test/fixtures/differential
 ```
 
 The corpus runner discovers `.p`, `.tptp`, and `.tstp` files. CI runs the complete

@@ -38,8 +38,10 @@ jobs:
         with:
           lake-package-directory: .
           build-args: "TPTP TPTP.Properties demo tests conformance corpus"
-      - name: Audit proof axioms
-        run: python3 scripts/check-axioms.py
+      - uses: jonaprieto/precommit-lean/.github/actions/precommit@v0.1.1
+        with:
+          token: ${{ secrets.ECOSYSTEM_READ_TOKEN || github.token }}
+          hooks: lean-axioms
       - name: Require total parser definitions
         run: '! rg -n "\\bpartial\\s+(def|theorem)\\b" TPTP/Parse.lean TPTP/FirstOrder/Parse.lean TPTP/FOF/Parse.lean TPTP/CNF/Parse.lean TPTP/TFF/Parse.lean'
       - name: Run tests
@@ -51,9 +53,9 @@ jobs:
       - name: Record E version
         run: eprover --version
       - name: Parse typed fixtures
-        run: python3 scripts/test-corpus.py --typed test/fixtures
+        run: python3 tools/test-corpus.py --typed test/fixtures
       - name: Differential syntax check
-        run: python3 scripts/test-differential.py test/fixtures/differential
+        run: python3 tools/test-differential.py test/fixtures/differential
       - name: Render demo
         run: lake exe demo > /tmp/tptp-demo.txt
       - run: test -s /tmp/tptp-demo.txt
@@ -62,8 +64,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Lean style (100-col / trailing-ws / tabs)
-        run: python3 scripts/style-check.py
+        with:
+          persist-credentials: false
+      - uses: jonaprieto/precommit-lean/.github/actions/precommit@v0.1.1
+        with:
+          token: ${{ secrets.ECOSYSTEM_READ_TOKEN || github.token }}
+          skip: lean-axioms
       - run: git diff --check
 
   corpus:
@@ -91,6 +97,6 @@ jobs:
           lake-package-directory: .
           build-args: corpus
       - name: Parse prop-pack corpus
-        run: python3 scripts/test-corpus.py prop-pack
+        run: python3 tools/test-corpus.py prop-pack
       - name: Parse typed fixtures
-        run: python3 scripts/test-corpus.py --typed test/fixtures
+        run: python3 tools/test-corpus.py --typed test/fixtures
