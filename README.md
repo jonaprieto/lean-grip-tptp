@@ -1,6 +1,6 @@
 # tptp
 
-[![CI](https://github.com/jonaprieto/lean-tptp/actions/workflows/ci.yml/badge.svg)](https://github.com/jonaprieto/lean-tptp/actions/workflows/ci.yml)
+[![CI](https://github.com/jonaprieto/lean-grip-tptp/actions/workflows/ci.yml/badge.svg)](https://github.com/jonaprieto/lean-grip-tptp/actions/workflows/ci.yml)
 [![Lean 4](https://img.shields.io/badge/Lean%204-library-5f5f5f)](lean-toolchain)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
@@ -10,7 +10,7 @@ Total TPTP/TSTP parsing for Lean 4, backed by [`grip`](https://github.com/jonapr
 
 ```lean
 require tptp from git
-  "https://github.com/jonaprieto/lean-tptp.git" @ "v0.5.1"
+  "https://github.com/jonaprieto/lean-grip-tptp.git" @ "v0.5.1"
 ```
 
 ## Quick start
