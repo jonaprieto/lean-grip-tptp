@@ -68,7 +68,7 @@ Every pull request must pass:
    accepted/rejected syntax and selected structural facts.
 6. Scope, arity, declaration-order, and type checks for the validation layer.
 7. Axiom, total-parser, style, formatting, and documentation checks.
-8. OATP integration tests for any API consumed outside `lean-tptp`.
+8. OATP integration tests for any API consumed outside `lean-grip-tptp`.
 
 The release checklist additionally requires a clean worktree, a pinned dependency/corpus
 revision, a tagged version, and a green remote CI run. Unsupported constructs must produce a
