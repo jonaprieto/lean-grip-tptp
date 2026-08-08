@@ -197,7 +197,11 @@ private def variableName (name : String) : Except String String :=
   else
     .error s!"invalid TPTP variable `{name}`"
 
-partial def Term.toTPTP (term : Term) (bound : Array String := #[]) :
+private theorem sizeOf_lt_of_mem_array {α : Type} [SizeOf α] {value : α}
+    {values : Array α} (h : value ∈ values) : sizeOf value < sizeOf values := by
+  exact Array.sizeOf_lt_of_mem h
+
+def Term.toTPTP (term : Term) (bound : Array String := #[]) :
     Except String String :=
   match term with
   | .var name =>
@@ -213,8 +217,25 @@ partial def Term.toTPTP (term : Term) (bound : Array String := #[]) :
         pure name
       else
         pure s!"{name}({join arguments})"
+termination_by sizeOf term
+decreasing_by
+  simp_wf
+  apply Nat.lt_of_lt_of_le
+    (sizeOf_lt_of_mem_array (by
+      apply Array.mem_def.mpr
+      assumption)) ?_
+  simp +arith
 
-partial def Expr.toTPTP (formula : Expr) (bound : Array String := #[]) :
+private def exprDepth : Expr → Nat
+  | .atom _ _ | .truth | .falsity => 0
+  | .not body => exprDepth body + 1
+  | .and left right
+  | .or left right
+  | .implies left right
+  | .iff left right => max (exprDepth left) (exprDepth right) + 1
+  | .forall _ body | .exists _ body => exprDepth body + 1
+
+def Expr.toTPTP (formula : Expr) (bound : Array String := #[]) :
     Except String String :=
   match formula with
   | .atom predicate arguments => do
@@ -253,6 +274,11 @@ partial def Expr.toTPTP (formula : Expr) (bound : Array String := #[]) :
       let variables ← variables.toList.mapM variableName
       let body ← body.toTPTP (bound ++ variables.toArray)
       pure s!"?[{join variables}] : ({body})"
+termination_by exprDepth formula
+decreasing_by
+  simp_wf
+  all_goals simp_all [exprDepth]
+  all_goals omega
 
 end Formula
 

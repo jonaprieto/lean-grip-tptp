@@ -22,6 +22,7 @@ lean_exe «demo» where
   root := `Demo
   srcDir := "examples"
 
+@[test_driver]
 lean_exe «tests» where
   root := `Tests
   srcDir := "test"

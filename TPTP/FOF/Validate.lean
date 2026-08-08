@@ -98,6 +98,7 @@ private def validatePredicateSymbol (symbol : FirstOrder.Symbol)
       else
         .error (.unknownDefinedSymbol symbol.raw)
 
+-- partiality: recursive terms contain Array children; validation stays private and pure.
 private partial def validateTerm (bound : List String) :
     FirstOrder.Term → Except ValidationError Unit
   | .variable name =>
@@ -108,6 +109,7 @@ private partial def validateTerm (bound : List String) :
       let _ ← arguments.toList.mapM (validateTerm bound)
       pure ()
 
+-- partiality: the same Array-backed syntax traversal is reused for symbol-only validation.
 private partial def validateTermSymbols : FirstOrder.Term → Except ValidationError Unit
   | .variable _ => .ok ()
   | .constant symbol => validateTermSymbol symbol
@@ -136,6 +138,7 @@ private def validateAtom (bound : List String) : FirstOrder.Atom → Except Vali
       let _ ← validateTerm bound left
       validateTerm bound right
 
+-- partiality: formula validation follows Array-backed term validation and remains private.
 private partial def validateFormula (bound : List String) : Formula → Except ValidationError Unit
   | .atom value => validateAtom bound value
   | .truth | .falsity => .ok ()
