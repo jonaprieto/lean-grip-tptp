@@ -1,4 +1,4 @@
-# tptp
+# lean-grip-tptp
 
 [![CI](https://github.com/jonaprieto/lean-grip-tptp/actions/workflows/ci.yml/badge.svg)](https://github.com/jonaprieto/lean-grip-tptp/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/jonaprieto/lean-grip-tptp?display_name=tag&sort=semver)](https://github.com/jonaprieto/lean-grip-tptp/releases)
@@ -7,6 +7,18 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 Total TPTP/TSTP parsing for Lean 4, backed by [`grip`](https://github.com/jonaprieto/lean-grip).
+
+## Status and review
+
+These libraries are actively evolving and are developed with AI assistance and human review.
+CI and machine-checked proofs provide useful evidence, but do not guarantee correctness,
+soundness, portability, performance, or suitability for every use case. Validate behavior
+and assumptions before relying on a release.
+
+Reviewer feedback is welcome, especially on correctness, proofs, API design, usability,
+portability, performance, documentation, and real-world use. Please use the
+[issue tracker](https://github.com/jonaprieto/lean-grip-tptp/issues) or open a PR with a
+reproducible example and the expected behavior.
 
 ## Install
 
