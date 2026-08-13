@@ -22,6 +22,9 @@ private def joinProduct (values : Array String) : String :=
 private def renderTypeBinder (binder : TypeBinder) : String :=
   s!"{binder.name}: $tType"
 
+-- partiality: TypeExpr stores recursive children in Arrays. A total renderer would need a
+-- separate depth-indexed traversal; keep the direct public API until that representation is
+-- changed or a measured stack renderer is justified.
 partial def TypeExpr.render : TypeExpr → String
   | .atom symbol => symbol.render
   | .application constructor arguments =>
@@ -45,7 +48,20 @@ instance : ToString TypeExpr where
 private def renderVariable (binder : TypedVariable) : String :=
   binder.type.map (fun type => s!"{binder.name}: {type.render}") |>.getD binder.name
 
-partial def Formula.render : Formula → String
+private def formulaDepth : Formula → Nat
+  | .atom _ | .truth | .falsity => 0
+  | .not body => formulaDepth body + 1
+  | .and left right
+  | .or left right
+  | .implies left right
+  | .impliedBy left right
+  | .iff left right
+  | .xor left right
+  | .nor left right
+  | .nand left right => max (formulaDepth left) (formulaDepth right) + 1
+  | .forall _ body | .exists _ body | .unique _ body => formulaDepth body + 1
+
+def Formula.render : Formula → String
   | .atom value => value.render
   | .truth => "$true"
   | .falsity => "$false"
@@ -64,6 +80,11 @@ partial def Formula.render : Formula → String
       s!"? [{join (variables.map renderVariable)}] : ({body.render})"
   | .unique variables body =>
       s!"# [{join (variables.map renderVariable)}] : ({body.render})"
+termination_by formula => formulaDepth formula
+decreasing_by
+  simp_wf
+  all_goals simp_all [formulaDepth]
+  all_goals omega
 
 instance : ToString Formula where
   toString := Formula.render

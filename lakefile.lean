@@ -2,7 +2,7 @@ import Lake
 open Lake DSL
 
 package «tptp» where
-  version := v!"0.5.3"
+  version := v!"0.5.4"
   leanOptions := #[⟨`autoImplicit, false⟩, ⟨`relaxedAutoImplicit, false⟩]
 
 require grip from git
@@ -22,6 +22,7 @@ lean_exe «demo» where
   root := `Demo
   srcDir := "examples"
 
+@[test_driver]
 lean_exe «tests» where
   root := `Tests
   srcDir := "test"

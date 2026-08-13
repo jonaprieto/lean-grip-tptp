@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.4 — 2026-08-13
+
+- Totalize the straightforward pure renderers and validators.
+
 ## 0.5.3 — 2026-08-12
 
 - Adopt Lean v4.33.0 and precommit-lean v0.1.5.

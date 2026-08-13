@@ -12,7 +12,7 @@ import TPTP.FirstOrder
 
 namespace TPTP.FirstOrder
 
-partial def Term.render : Term → String
+def Term.render : Term → String
   | .variable name => name
   | .constant symbol => symbol.render
   | .function symbol arguments =>
@@ -20,6 +20,14 @@ partial def Term.render : Term → String
         symbol.render
       else
         s!"{symbol.render}({String.intercalate ", " (arguments.toList.map Term.render)})"
+termination_by term => term
+decreasing_by
+  simp_wf
+  apply Nat.lt_of_lt_of_le
+    (Array.sizeOf_lt_of_mem (as := arguments) (by
+      apply Array.mem_def.mpr
+      assumption)) ?_
+  simp +arith
 
 instance : ToString Term where
   toString := Term.render

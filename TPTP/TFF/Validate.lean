@@ -168,6 +168,7 @@ private def firstDuplicate : List String → Option String
   | [] => none
   | name :: rest => if rest.contains name then some name else firstDuplicate rest
 
+-- partiality: type checking recurses through Array-backed TypeExpr values.
 private partial def typeKnown (signature : Signature) (typeVariables : List String)
     (type : TypeExpr) : Except ValidationError Unit :=
   match canonicalType type with
@@ -283,6 +284,7 @@ private def literalType (name : String) : TypeExpr :=
 private def defaultType (arity : Nat) (result : TypeExpr) : TypeExpr :=
   if arity == 0 then result else .mapping (Array.replicate arity (atom "$i")) result
 
+-- partiality: term type inference traverses Array-backed first-order terms.
 private partial def termAsType (typeVariables : List String) :
     Term → Except ValidationError TypeExpr
   | .variable name =>
@@ -308,6 +310,7 @@ private def applyMonotype (name : String) (type : TypeExpr) (arguments : Array T
       if arguments.isEmpty then pure type else .error (.invalidArity name 0 arguments.size)
   | .product _ | .forall _ _ => .error (.invalidApplication name)
 
+-- partiality: defined-symbol checking participates in the mutually recursive validator.
 private partial def definedTermType (signature : Signature) (symbol : Symbol)
     (arguments : Array TypeExpr) : Except ValidationError (TypeExpr × Signature) := do
   let name := symbol.raw
@@ -346,6 +349,7 @@ private partial def definedTermType (signature : Signature) (symbol : Symbol)
       pure (atom "$real", signature)
   | _ => throw (.invalidDefinedUse name)
 
+-- partiality: defined-symbol checking participates in the mutually recursive validator.
 private partial def definedPredicateType (signature : Signature) (symbol : Symbol)
     (arguments : Array TypeExpr) : Except ValidationError (TypeExpr × Signature) := do
   let name := symbol.raw
@@ -375,6 +379,8 @@ private partial def definedPredicateType (signature : Signature) (symbol : Symbo
     let _ ← checkSame s!"arguments of {name}" arguments
     pure (atom "$o", signature)
 
+-- partiality: term checking, declaration inference, and formula checking form one recursive
+-- validator over Array-backed syntax and evolving signatures.
 mutual
 private partial def checkTerms (signature : Signature) (typeVariables : List String)
     (variables : List (String × TypeExpr)) :
@@ -385,6 +391,7 @@ private partial def checkTerms (signature : Signature) (typeVariables : List Str
       let (types, signature) ← checkTerms signature typeVariables variables rest
       pure (#[type] ++ types, signature)
 
+-- partiality: declaration application calls back into the mutually recursive term checker.
 private partial def applyDeclared (signature : Signature) (typeVariables : List String)
     (variables : List (String × TypeExpr)) (symbol : Symbol) (arguments : Array Term)
     (defaultResult : TypeExpr) : Except ValidationError (TypeExpr × Signature) := do
@@ -421,6 +428,7 @@ private partial def applyDeclared (signature : Signature) (typeVariables : List 
           let result ← applyMonotype symbol.raw type types
           pure (result, signature)
 
+-- partiality: term checking is part of the mutually recursive validator.
 private partial def checkTerm (signature : Signature) (typeVariables : List String)
     (variables : List (String × TypeExpr)) : Term →
     Except ValidationError (TypeExpr × Signature)
@@ -502,6 +510,7 @@ private def checkBinders (signature : Signature) (typeVariables : List String)
       termSeen := true
   pure (terms, localTypeVariables)
 
+-- partiality: formula checking is part of the mutually recursive validator.
 private partial def checkFormula (signature : Signature) (typeVariables : List String)
     (variables : List (String × TypeExpr)) : Formula →
     Except ValidationError Signature
