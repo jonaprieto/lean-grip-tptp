@@ -3,6 +3,7 @@
 ## 0.5.5 — 2026-08-13
 
 - Add the standard review guidance to the README.
+- Pin the newest released Grip dependency.
 
 ## 0.5.4 — 2026-08-13
 
