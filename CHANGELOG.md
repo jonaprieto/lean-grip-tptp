@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.5 — 2026-08-13
+
+- Add the standard review guidance to the README.
+
 ## 0.5.4 — 2026-08-13
 
 - Totalize the straightforward pure renderers and validators.
