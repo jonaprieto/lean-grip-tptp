@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2 — 2026-08-12
+
+- Adopt the shared `precommit-lean` hooks and refresh them to the pinned release.
+- Rewrite the README concisely, correct the repository links, and drop the version number
+  from it; the lakefile is the only place a pin belongs.
+
 ## 0.5.0
 
 - Complete the TFF1 correctness pass for polymorphic type substitution, alpha-renaming,
