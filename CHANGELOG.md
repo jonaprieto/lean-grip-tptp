@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.7 — 2026-09-09
+
+- Refresh Grip and document the contribution policy and package problem.
+
 ## 0.5.6 — 2026-09-08
 
 - Support Lean v4.33.1 and refresh Grip to v0.3.5.
