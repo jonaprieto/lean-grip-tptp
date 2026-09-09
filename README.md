@@ -8,6 +8,11 @@
 
 Total TPTP/TSTP parsing for Lean 4, backed by [`grip`](https://github.com/jonaprieto/lean-grip).
 
+## Problem
+
+Tools that consume TPTP and TSTP need a total parser with useful errors rather than an ad hoc
+reader for a subset of the language.
+
 ## Development
 
 This project is maintained by its author with AI-assisted development tools.
