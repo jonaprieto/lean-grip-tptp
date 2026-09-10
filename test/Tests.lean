@@ -60,6 +60,15 @@ private def checkFormula : IO Unit := do
   | _ => throw (IO.userError "formula AST shape")
 
 private def checkErrors : IO Unit := do
+  for bytes in [ByteArray.mk #[255], ByteArray.mk #[0xC3]] do
+    let source := "fof(a,axiom,p".toUTF8 ++ bytes ++ ").".toUTF8
+    check (!(parse source).isOk) "invalid UTF-8 document accepted"
+    check (!(parseStatement source).isOk) "invalid UTF-8 statement accepted"
+    check (!(Formula.parseFormula ("p".toUTF8 ++ bytes)).isOk)
+      "invalid UTF-8 formula accepted"
+  match parseStatementString "fof(a,axiom,'π')." with
+  | .ok statement => check (statement.formula == "'π'") "UTF-8 formula changed"
+  | .error _ => throw (IO.userError "valid UTF-8 statement rejected")
   match parseStatementString "fof(bad, axiom, p(" with
   | .ok _ => throw (IO.userError "malformed statement accepted")
   | .error error => check (error.pos > 0) "positioned parse error"

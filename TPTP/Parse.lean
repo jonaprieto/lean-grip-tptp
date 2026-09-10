@@ -19,6 +19,12 @@ namespace TPTP
 
 open Grip GParser
 
+private def parseUtf8 {g : Grade} {α : Type} (parser : GParser g α)
+    (source : ByteArray) : Except Grip.ParseError α :=
+  if (String.fromUTF8? source).isNone then
+    .error (mkParseError source ⟨0, ["valid UTF-8"]⟩)
+  else parser.parse source
+
 private def isNameByte (byte : UInt8) : Bool :=
   Ascii.isAlphaNum byte || byte == 95 || byte == 36
 
@@ -238,7 +244,7 @@ private def documentParser : Grip.Parser Document :=
 
 /-- Parse a complete TPTP/TSTP document from bytes. -/
 def parse (source : ByteArray) : Except Grip.ParseError Document :=
-  documentParser.parse source
+  parseUtf8 documentParser source
 
 /-- Parse a complete TPTP/TSTP document from UTF-8 text. -/
 def parseString (source : String) : Except Grip.ParseError Document :=
@@ -246,7 +252,7 @@ def parseString (source : String) : Except Grip.ParseError Document :=
 
 /-- Parse exactly one TPTP/TSTP statement. -/
 def parseStatement (source : ByteArray) : Except Grip.ParseError Statement :=
-  (trivia *> statementParser <* trivia <* GParser.eof).parse source
+  parseUtf8 (trivia *> statementParser <* trivia <* GParser.eof) source
 
 /-- Parse exactly one TPTP/TSTP statement from UTF-8 text. -/
 def parseStatementString (source : String) : Except Grip.ParseError Statement :=
@@ -336,7 +342,7 @@ private def formulaParser : GParser conditional Expr :=
 
 /-- Parse the supported first-order formula fragment from bytes. -/
 def parseFormula (source : ByteArray) : Except Grip.ParseError Expr :=
-  (trivia *> formulaParser <* trivia <* GParser.eof).parse source
+  parseUtf8 (trivia *> formulaParser <* trivia <* GParser.eof) source
 
 /-- Parse the supported first-order formula fragment from UTF-8 text. -/
 def parseFormulaString (source : String) : Except Grip.ParseError Expr :=

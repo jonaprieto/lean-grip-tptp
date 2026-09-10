@@ -19,6 +19,10 @@ theorem known_role_round_trip : (Role.ofString "negated_conjecture").render =
 
 theorem empty_document_render : Document.render { items := #[] } = "" := rfl
 
+theorem invalid_utf8_document_rejected :
+    (parse ("fof(a,axiom,p".toUTF8 ++ ByteArray.mk #[255] ++ ").".toUTF8)).isOk = false :=
+  by decide
+
 theorem fof_binary_render :
     FOF.Formula.render (.implies (.atom (.predicate { raw := "p" } #[]))
       (.atom (.predicate { raw := "q" } #[]))) = "(p => q)" := rfl
@@ -30,6 +34,7 @@ theorem cnf_empty_render : CNF.Clause.render { literals := #[] } = "$false" := r
 #print axioms known_kind_round_trip
 #print axioms known_role_round_trip
 #print axioms empty_document_render
+#print axioms invalid_utf8_document_rejected
 #print axioms fof_binary_render
 #print axioms cnf_empty_render
 
