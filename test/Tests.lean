@@ -60,6 +60,10 @@ private def checkFormula : IO Unit := do
   | _ => throw (IO.userError "formula AST shape")
 
 private def checkErrors : IO Unit := do
+  for source in ["fof(b,axiom,q", "fof(a,axiom,p).\nfof(b,axiom,q"] do
+    match parseString source with
+    | .ok _ => throw (IO.userError "incomplete document accepted")
+    | .error error => check (error.pos == source.toUTF8.size) "item error lost"
   for bytes in [ByteArray.mk #[255], ByteArray.mk #[0xC3]] do
     let source := "fof(a,axiom,p".toUTF8 ++ bytes ++ ").".toUTF8
     check (!(parse source).isOk) "invalid UTF-8 document accepted"

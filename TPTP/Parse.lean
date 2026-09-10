@@ -239,7 +239,9 @@ private def itemParser : GParser conditional Item :=
   (Item.include <$> includeParser) <|> (Item.statement <$> statementParser)
 
 private def documentParser : Grip.Parser Document :=
-  let items := trivia *> GParser.many (itemParser <* trivia) <* GParser.eof
+  -- Replay a failed item to retain the diagnostic discarded by `many`.
+  let endOfDocument := GParser.eof <|> (itemParser *> GParser.fail)
+  let items := trivia *> GParser.many (itemParser <* trivia) <* endOfDocument
   GParser.map (fun values => { items := values.toArray }) (GParser.weakenFallible items)
 
 /-- Parse a complete TPTP/TSTP document from bytes. -/
