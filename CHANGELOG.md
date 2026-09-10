@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.8 — 2026-09-09
+
+- Reject invalid UTF-8 before capturing formula text.
+- Preserve the failed item's diagnostic when parsing a document.
+
 ## 0.5.7 — 2026-09-09
 
 - Refresh Grip and document the contribution policy and package problem.
