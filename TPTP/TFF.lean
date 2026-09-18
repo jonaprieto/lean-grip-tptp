@@ -70,12 +70,14 @@ namespace TypeExpr.Internal
 def substitutionLookup
     (substitution : Array (String × TypeExpr))
     (name : String)
-    : Option TypeExpr :=
+    : Option TypeExpr
+    :=
   substitution.find? (fun pair => pair.1 == name) |>.map Prod.snd
 
 def isTypeVariable
     (name : String)
-    : Bool :=
+    : Bool
+    :=
   match name.toList with
   | first :: _ => first.isUpper
   | [] => false
@@ -83,7 +85,8 @@ def isTypeVariable
 def appendUnique
     (values : Array String)
     (value : String)
-    : Array String :=
+    : Array String
+    :=
   if values.toList.contains value then values else values.push value
 
 def freeVariablesAux
@@ -135,26 +138,30 @@ def renameBound
 
 def maxLength
     (used : Array String)
-    : Nat :=
+    : Nat
+    :=
   used.foldl (fun result value => max result value.length) 0
 
 def freshFallback
     (base : String)
     (used : Array String)
-    : String :=
+    : String
+    :=
   base ++ "_" ++ String.ofList (List.replicate (maxLength used + 1) '_')
 
 def freshCandidate
     (base : String)
     (index : Nat)
-    : String :=
+    : String
+    :=
   if index == 0 then base else s!"{base}_{index}"
 
 def freshNameLoop
     (base : String)
     (used : Array String)
     (index fuel : Nat)
-    : String :=
+    : String
+    :=
   match fuel with
   | 0 => freshFallback base used
   | fuel + 1 =>
@@ -167,7 +174,8 @@ def freshNameLoop
 def freshName
     (base : String)
     (used : Array String)
-    : String :=
+    : String
+    :=
   freshNameLoop base used 0 (used.size + 1)
 
 def depth
@@ -211,7 +219,8 @@ theorem array_depth_mem
     (types : Array TypeExpr)
     (type : TypeExpr)
     (h : type ∈ types)
-    : depth type ≤ types.foldl (fun value type => max value (depth type)) 0 := by
+    : depth type ≤ types.foldl (fun value type => max value (depth type)) 0
+    := by
   rw [← Array.foldl_toList]
   apply list_depth_mem types.toList 0 type
   exact Array.mem_def.mp h
@@ -242,7 +251,8 @@ theorem array_foldl_map_congr_mem
     (g' : γ → α → γ)
     (h : ∀ value, value ∈ values → ∀ accumulator, g accumulator (f value) = g' accumulator value)
     (init : γ)
-    : (values.map f).foldl g init = values.foldl g' init := by
+    : (values.map f).foldl g init = values.foldl g' init
+    := by
   rw [← Array.foldl_toList, ← Array.foldl_toList, Array.toList_map]
   apply list_foldl_map_congr_mem f g g' values.toList init
   intro value hValue accumulator
@@ -252,7 +262,8 @@ private
 theorem depth_renameBound
     (oldName newName : String)
     (type : TypeExpr)
-    : depth (renameBound oldName newName type) = depth type := by
+    : depth (renameBound oldName newName type) = depth type
+    := by
   cases type with
   | atom symbol =>
       simp only [renameBound]
@@ -294,7 +305,8 @@ def renameBinderStep
     (replacementFree used : Array String)
     (state : Array TypeBinder × TypeExpr)
     (binder : TypeBinder)
-    : Array TypeBinder × TypeExpr :=
+    : Array TypeBinder × TypeExpr
+    :=
   let (variables, body) := state
   if replacementFree.toList.contains binder.name then
     let fresh := freshName binder.name used
@@ -326,14 +338,16 @@ def renameBinderStep
 
 def substitutionFreeVariables
     (substitution : Array (String × TypeExpr))
-    : Array String :=
+    : Array String
+    :=
   substitution.foldl (fun result pair =>
     (freeVariablesAux pair.2).foldl appendUnique result) #[]
 
 def substituteAux
     (type : TypeExpr)
     (substitution : Array (String × TypeExpr))
-    : TypeExpr :=
+    : TypeExpr
+    :=
   match type with
   | .atom symbol => substitutionLookup substitution symbol.raw |>.getD (.atom symbol)
   | .application constructor arguments =>
@@ -381,14 +395,16 @@ end TypeExpr.Internal
 /-- Collect free type variables in source order. -/
 def TypeExpr.freeVariables
     (type : TypeExpr)
-    : Array String :=
+    : Array String
+    :=
   Internal.freeVariablesAux type
 
 /-- Capture-avoiding substitution for the type variables in a type expression. -/
 def TypeExpr.substitute
     (substitution : Array (String × TypeExpr))
     (type : TypeExpr)
-    : TypeExpr :=
+    : TypeExpr
+    :=
   Internal.substituteAux type substitution
 
 /-- Rename a bound type variable without capturing a free variable. -/
@@ -456,7 +472,8 @@ end TypeExpr.Internal
 
 def TypeExpr.alphaEquivalent
     (left right : TypeExpr)
-    : Bool :=
+    : Bool
+    :=
   TypeExpr.Internal.alphaNormalize [] left == TypeExpr.Internal.alphaNormalize [] right
 
 end TPTP.TFF

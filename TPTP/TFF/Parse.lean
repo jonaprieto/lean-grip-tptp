@@ -151,14 +151,16 @@ private def nonassocFormula (unitFormula : P Formula) : P Formula := gdo
 private
 def andFormula
     (unitFormula : P Formula)
-    : P Formula :=
+    : P Formula
+    :=
   GParser.map (fun (first, rest) => rest.foldl Formula.and first)
     (GParser.map2 Prod.mk unitFormula (GParser.many1 (andSeparator *> unitFormula)))
 
 private
 def orFormula
     (unitFormula : P Formula)
-    : P Formula :=
+    : P Formula
+    :=
   GParser.map (fun (first, rest) => rest.foldl Formula.or first)
     (GParser.map2 Prod.mk unitFormula (GParser.many1 (orSeparator *> unitFormula)))
 
@@ -186,37 +188,43 @@ private def formulaParser : P Formula :=
 private
 def parseFormulaBytes
     (source : ByteArray)
-    : Except Grip.ParseError Formula :=
+    : Except Grip.ParseError Formula
+    :=
   (trivia *> formulaParser <* trivia <* GParser.eof).parse source
 
 /-- Parse a complete TF0 formula from bytes. -/
 def parseFormula
     (source : ByteArray)
-    : Except Grip.ParseError Formula :=
+    : Except Grip.ParseError Formula
+    :=
   parseFormulaBytes source
 
 /-- Parse a complete TF0 formula from UTF-8 text. -/
 def parseFormulaString
     (source : String)
-    : Except Grip.ParseError Formula :=
+    : Except Grip.ParseError Formula
+    :=
   parseFormula source.toUTF8
 
 /-- Parse a complete TF0 type declaration from bytes. -/
 def parseTypeDeclaration
     (source : ByteArray)
-    : Except Grip.ParseError Declaration :=
+    : Except Grip.ParseError Declaration
+    :=
   (trivia *> typeDeclaration <* trivia <* GParser.eof).parse source
 
 /-- Parse a complete TF0 type declaration from UTF-8 text. -/
 def parseTypeDeclarationString
     (source : String)
-    : Except Grip.ParseError Declaration :=
+    : Except Grip.ParseError Declaration
+    :=
   parseTypeDeclaration source.toUTF8
 
 /-- Parse the typed body of one tff statement, using the type role for declarations. -/
 def parseStatementBody
     (statement : TPTP.Statement)
-    : Except TPTP.FormulaError Body :=
+    : Except TPTP.FormulaError Body
+    :=
   if statement.kind != .tff then
     .error (.wrongKind .tff statement.kind)
   else if statement.role == .type then

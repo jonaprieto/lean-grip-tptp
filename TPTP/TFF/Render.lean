@@ -16,19 +16,22 @@ namespace TPTP.TFF
 private
 def join
     (values : Array String)
-    : String :=
+    : String
+    :=
   String.intercalate ", " values.toList
 
 private
 def joinProduct
     (values : Array String)
-    : String :=
+    : String
+    :=
   String.intercalate " * " values.toList
 
 private
 def renderTypeBinder
     (binder : TypeBinder)
-    : String :=
+    : String
+    :=
   s!"{binder.name}: $tType"
 
 -- partiality: TypeExpr stores recursive children in Arrays. A total renderer would need a
@@ -60,7 +63,8 @@ instance : ToString TypeExpr where
 private
 def renderVariable
     (binder : TypedVariable)
-    : String :=
+    : String
+    :=
   binder.type.map (fun type => s!"{binder.name}: {type.render}") |>.getD binder.name
 
 private
@@ -111,7 +115,8 @@ instance : ToString Formula where
 
 def Declaration.render
     (declaration : Declaration)
-    : String :=
+    : String
+    :=
   s!"{declaration.symbol.render}: {declaration.type.render}"
 
 instance : ToString Declaration where

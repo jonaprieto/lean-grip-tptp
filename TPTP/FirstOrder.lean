@@ -20,7 +20,8 @@ structure Symbol where
 
 def Symbol.render
     (symbol : Symbol)
-    : String :=
+    : String
+    :=
   symbol.raw
 
 instance : ToString Symbol where

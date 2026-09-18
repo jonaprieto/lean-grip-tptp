@@ -39,7 +39,8 @@ def renderFormula
 
 def Formula.render
     (formula : Formula)
-    : String :=
+    : String
+    :=
   renderFormula formula
 
 instance : ToString Formula where

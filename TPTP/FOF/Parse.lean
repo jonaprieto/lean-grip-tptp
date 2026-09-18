@@ -81,14 +81,16 @@ private def nonassocFormula (unitFormula : P Formula) : P Formula := gdo
 private
 def andFormula
     (unitFormula : P Formula)
-    : P Formula :=
+    : P Formula
+    :=
   GParser.map (fun (first, rest) => rest.foldl Formula.and first)
     (GParser.map2 Prod.mk unitFormula (GParser.many1 (andSeparator *> unitFormula)))
 
 private
 def orFormula
     (unitFormula : P Formula)
-    : P Formula :=
+    : P Formula
+    :=
   GParser.map (fun (first, rest) => rest.foldl Formula.or first)
     (GParser.map2 Prod.mk unitFormula (GParser.many1 (orSeparator *> unitFormula)))
 
@@ -114,18 +116,21 @@ private def formulaParser : P Formula :=
 /-- Parse a complete FOF formula from bytes. -/
 def parseFormula
     (source : ByteArray)
-    : Except Grip.ParseError Formula :=
+    : Except Grip.ParseError Formula
+    :=
   (trivia *> formulaParser <* trivia <* GParser.eof).parse source
 
 /-- Parse a complete FOF formula from UTF-8 text. -/
 def parseFormulaString
     (source : String)
-    : Except Grip.ParseError Formula :=
+    : Except Grip.ParseError Formula
+    :=
   parseFormula source.toUTF8
 
 def parseStatementFormula
     (statement : TPTP.Statement)
-    : Except TPTP.FormulaError Formula :=
+    : Except TPTP.FormulaError Formula
+    :=
   if statement.kind != .fof then
     .error (.wrongKind .fof statement.kind)
   else

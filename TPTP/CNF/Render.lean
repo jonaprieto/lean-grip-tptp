@@ -21,7 +21,8 @@ def Literal.render
 
 def Clause.render
     (clause : Clause)
-    : String :=
+    : String
+    :=
   if clause.literals.isEmpty then
     "$false"
   else

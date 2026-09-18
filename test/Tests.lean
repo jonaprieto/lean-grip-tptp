@@ -12,7 +12,8 @@ private
 def check
     (condition : Bool)
     (message : String)
-    : IO Unit :=
+    : IO Unit
+    :=
   if condition then pure () else throw (IO.userError message)
 
 private def documentSource : String :=

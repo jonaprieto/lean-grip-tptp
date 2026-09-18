@@ -58,7 +58,8 @@ private def definedTerms : List String :=
 private
 def symbolClass
     (name : String)
-    : Option Bool :=
+    : Option Bool
+    :=
   match name.toList with
   | '$' :: '$' :: _ => some true
   | '$' :: _ => some false
@@ -67,7 +68,8 @@ def symbolClass
 private
 def validateTermSymbol
     (symbol : FirstOrder.Symbol)
-    : Except ValidationError Unit :=
+    : Except ValidationError Unit
+    :=
   match symbolClass symbol.raw with
   | none | some true => .ok ()
   | some false =>
@@ -77,7 +79,8 @@ def validateTermSymbol
 private
 def validateTermApplication
     (symbol : FirstOrder.Symbol)
-    : Except ValidationError Unit :=
+    : Except ValidationError Unit
+    :=
   match symbol.raw.toList with
   | '"' :: _ | '+' :: _ | '-' :: _ => .error (.invalidTermApplication symbol.raw)
   | first :: _ =>
@@ -91,7 +94,8 @@ private
 def validatePredicateSymbol
     (symbol : FirstOrder.Symbol)
     (arguments : Array FirstOrder.Term)
-    : Except ValidationError Unit :=
+    : Except ValidationError Unit
+    :=
   match symbolClass symbol.raw with
   | none | some true => .ok ()
   | some false =>
@@ -146,7 +150,8 @@ def validateTermSymbols
 /-- Validate defined and system symbol usage without imposing FOF variable scope. -/
 def validateAtomSymbols
     (atom : FirstOrder.Atom)
-    : Except ValidationError Unit :=
+    : Except ValidationError Unit
+    :=
   match atom with
   | .predicate symbol arguments => do
       let _ ← validatePredicateSymbol symbol arguments
@@ -199,7 +204,8 @@ def validateFormula
 
 def validate
     (formula : Formula)
-    : Except ValidationError Unit :=
+    : Except ValidationError Unit
+    :=
   validateFormula [] formula
 
 end TPTP.FOF
