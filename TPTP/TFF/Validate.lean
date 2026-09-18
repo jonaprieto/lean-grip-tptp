@@ -36,7 +36,9 @@ inductive ValidationError where
 
 instance : Inhabited TypeExpr := ⟨.atom { raw := "$i" }⟩
 
-def ValidationError.message : ValidationError → String
+def ValidationError.message
+    : ValidationError →
+      String
   | .unboundVariable name => s!"unbound variable {name}"
   | .unboundTypeVariable name => s!"unbound type variable {name}"
   | .emptyBinder => "quantifier variable list cannot be empty"
@@ -68,15 +70,25 @@ structure Signature where
 
 instance : Inhabited Signature := ⟨{}⟩
 
-private def lookup (signature : Signature) (name : String) : Option Declaration :=
+private
+def lookup
+    (signature : Signature)
+    (name : String)
+    : Option Declaration :=
   signature.declarations.find? (fun declaration => declaration.symbol.raw == name)
 
-private def canonicalTypeName : String → String
+private
+def canonicalTypeName
+    : String →
+      String
   | "$iType" => "$i"
   | "$oType" => "$o"
   | name => name
 
-private def canonicalType : TypeExpr → TypeExpr
+private
+def canonicalType
+    : TypeExpr →
+      TypeExpr
   | .atom symbol => .atom { symbol with raw := canonicalTypeName symbol.raw }
   | .application constructor arguments =>
       .application { constructor with raw := canonicalTypeName constructor.raw }
@@ -86,12 +98,18 @@ private def canonicalType : TypeExpr → TypeExpr
       .mapping (arguments.map canonicalType) (canonicalType result)
   | .forall variables body => .forall variables (canonicalType body)
 
-private def canonicalSignature (signature : Signature) : Signature :=
+private
+def canonicalSignature
+    (signature : Signature)
+    : Signature :=
   { declarations := signature.declarations.map fun declaration =>
       { declaration with type := canonicalType declaration.type } }
 
-private def add (signature : Signature) (declaration : Declaration) :
-    Except ValidationError Signature :=
+private
+def add
+    (signature : Signature)
+    (declaration : Declaration)
+    : Except ValidationError Signature :=
   let declaration := { declaration with type := canonicalType declaration.type }
   match lookup signature declaration.symbol.raw with
   | none => .ok { declarations := signature.declarations.push declaration }
@@ -101,40 +119,67 @@ private def add (signature : Signature) (declaration : Declaration) :
       else
         .error (.conflictingDeclaration declaration.symbol.raw previous.type declaration.type)
 
-private def atom (name : String) : TypeExpr :=
+private
+def atom
+    (name : String)
+    : TypeExpr :=
   .atom { raw := name }
 
-private def isBuiltinType (name : String) : Bool :=
+private
+def isBuiltinType
+    (name : String)
+    : Bool :=
   ["$i", "$o", "$iType", "$oType", "$tType", "$int", "$rat", "$real"].contains name
 
-private def isBoolean (type : TypeExpr) : Bool :=
+private
+def isBoolean
+    (type : TypeExpr)
+    : Bool :=
   canonicalType type == atom "$o"
 
-private def isKind (type : TypeExpr) : Bool :=
+private
+def isKind
+    (type : TypeExpr)
+    : Bool :=
   canonicalType type == atom "$tType"
 
-private def isNumeric (type : TypeExpr) : Bool :=
+private
+def isNumeric
+    (type : TypeExpr)
+    : Bool :=
   ["$int", "$rat", "$real"].contains (match canonicalType type with
     | .atom symbol => symbol.raw
     | _ => "")
 
-private def checkArity (name : String) (expected actual : Nat) :
-    Except ValidationError Unit :=
+private
+def checkArity
+    (name : String)
+    (expected actual : Nat)
+    : Except ValidationError Unit :=
   if expected == actual then .ok () else .error (.invalidArity name expected actual)
 
-private def variablesLookup (variables : List (String × TypeExpr)) (name : String) :
-    Option TypeExpr :=
+private
+def variablesLookup
+    (variables : List (String × TypeExpr))
+    (name : String)
+    : Option TypeExpr :=
   match variables with
   | [] => none
   | (bound, type) :: rest => if bound == name then some type else variablesLookup rest name
 
-private def sameTypes (types : Array TypeExpr) : Option TypeExpr :=
+private
+def sameTypes
+    (types : Array TypeExpr)
+    : Option TypeExpr :=
   match types[0]? with
   | none => none
   | some first => if types.all (· == first) then some first else none
 
-private def checkSame (context : String) (types : Array TypeExpr) :
-    Except ValidationError TypeExpr :=
+private
+def checkSame
+    (context : String)
+    (types : Array TypeExpr)
+    : Except ValidationError TypeExpr :=
   let types := types.map canonicalType
   match sameTypes types with
   | some type => .ok type
@@ -155,22 +200,36 @@ private def checkArguments (name : String) (expected : Array TypeExpr)
     if pair.1 != pair.2 then
       throw (.typeMismatch s!"argument of {name}" pair.1 pair.2)
 
-private def typeConstructorArity (declaration : Declaration) : Option Nat :=
+private
+def typeConstructorArity
+    (declaration : Declaration)
+    : Option Nat :=
   match declaration.type with
   | .mapping arguments result =>
       if isKind result && arguments.all isKind then some arguments.size else none
   | _ => none
 
-private def typeVariableNames (variables : Array TypeBinder) : List String :=
+private
+def typeVariableNames
+    (variables : Array TypeBinder)
+    : List String :=
   variables.toList.map TypeBinder.name
 
-private def firstDuplicate : List String → Option String
+private
+def firstDuplicate
+    : List String →
+      Option String
   | [] => none
   | name :: rest => if rest.contains name then some name else firstDuplicate rest
 
 -- partiality: type checking recurses through Array-backed TypeExpr values.
-private partial def typeKnown (signature : Signature) (typeVariables : List String)
-    (type : TypeExpr) : Except ValidationError Unit :=
+private
+partial
+def typeKnown
+    (signature : Signature)
+    (typeVariables : List String)
+    (type : TypeExpr)
+    : Except ValidationError Unit :=
   match canonicalType type with
   | .atom symbol =>
       if typeVariables.contains symbol.raw then
@@ -205,7 +264,10 @@ private partial def typeKnown (signature : Signature) (typeVariables : List Stri
   | .mapping _ _ => throw (.invalidType "a mapping type cannot be used as a term type")
   | .forall _ _ => throw (.invalidType "a polymorphic type cannot be used as a type argument")
 
-private def validDeclarationName (symbol : Symbol) : Bool :=
+private
+def validDeclarationName
+    (symbol : Symbol)
+    : Bool :=
   match symbol.raw.toList with
   | [] => false
   | '"' :: _ => false
@@ -241,8 +303,12 @@ private def validateMapping (signature : Signature) (typeVariables : List String
     let _ ← typeKnown signature typeVariables result
     pure ()
 
-private def validateMonotype (signature : Signature) (typeVariables : List String) :
-    TypeExpr → Except ValidationError Unit
+private
+def validateMonotype
+    (signature : Signature)
+    (typeVariables : List String)
+    : TypeExpr →
+      Except ValidationError Unit
   | type@(.atom _) => typeKnown signature typeVariables type
   | type@(.application _ _) => typeKnown signature typeVariables type
   | .mapping arguments result => validateMapping signature typeVariables arguments result
@@ -259,34 +325,52 @@ private def validateSignatureType (signature : Signature) (declaration : Declara
       validateMonotype signature names body
   | type => validateMonotype signature [] type
 
-private def definedPredicates : List String :=
+private
+def definedPredicates
+    : List String :=
   [ "$distinct", "$less", "$lesseq", "$greater", "$greatereq", "$is_int", "$is_rat" ]
 
-private def definedTerms : List String :=
+private
+def definedTerms
+    : List String :=
   [ "$uminus", "$sum", "$difference", "$product", "$quotient", "$quotient_e"
   , "$quotient_t", "$quotient_f", "$remainder_e", "$remainder_t", "$remainder_f"
   , "$floor", "$ceiling", "$truncate", "$round", "$abs"
   , "$to_int", "$to_rat", "$to_real" ]
 
-private def isNumberOrDistinct (name : String) : Bool :=
+private
+def isNumberOrDistinct
+    (name : String)
+    : Bool :=
   match name.toList with
   | '"' :: _ => true
   | '+' :: _ | '-' :: _ => true
   | first :: _ => first.isDigit
   | [] => false
 
-private def literalType (name : String) : TypeExpr :=
+private
+def literalType
+    (name : String)
+    : TypeExpr :=
   if name.startsWith "\"" then atom "$i"
   else if name.contains "/" then atom "$rat"
   else if name.contains "." || name.contains "e" || name.contains "E" then atom "$real"
   else atom "$int"
 
-private def defaultType (arity : Nat) (result : TypeExpr) : TypeExpr :=
+private
+def defaultType
+    (arity : Nat)
+    (result : TypeExpr)
+    : TypeExpr :=
   if arity == 0 then result else .mapping (Array.replicate arity (atom "$i")) result
 
 -- partiality: term type inference traverses Array-backed first-order terms.
-private partial def termAsType (typeVariables : List String) :
-    Term → Except ValidationError TypeExpr
+private
+partial
+def termAsType
+    (typeVariables : List String)
+    : Term →
+      Except ValidationError TypeExpr
   | .variable name =>
       if typeVariables.contains name then .ok (atom name)
       else .error (.unboundTypeVariable name)
@@ -295,13 +379,21 @@ private partial def termAsType (typeVariables : List String) :
       let arguments ← arguments.toList.mapM (termAsType typeVariables)
       pure (.application constructor arguments.toArray)
 
-private def instantiate (variables : Array TypeBinder) (body : TypeExpr)
-    (arguments : Array TypeExpr) : TypeExpr :=
+private
+def instantiate
+    (variables : Array TypeBinder)
+    (body : TypeExpr)
+    (arguments : Array TypeExpr)
+    : TypeExpr :=
   let substitution := (variables.toList.map TypeBinder.name).zip arguments.toList |>.toArray
   body.substitute substitution
 
-private def applyMonotype (name : String) (type : TypeExpr) (arguments : Array TypeExpr) :
-    Except ValidationError TypeExpr :=
+private
+def applyMonotype
+    (name : String)
+    (type : TypeExpr)
+    (arguments : Array TypeExpr)
+    : Except ValidationError TypeExpr :=
   match type with
   | .mapping expected result => do
       let _ ← checkArguments name expected arguments
@@ -382,9 +474,14 @@ private partial def definedPredicateType (signature : Signature) (symbol : Symbo
 -- partiality: term checking, declaration inference, and formula checking form one recursive
 -- validator over Array-backed syntax and evolving signatures.
 mutual
-private partial def checkTerms (signature : Signature) (typeVariables : List String)
-    (variables : List (String × TypeExpr)) :
-    List Term → Except ValidationError (Array TypeExpr × Signature)
+private
+partial
+def checkTerms
+    (signature : Signature)
+    (typeVariables : List String)
+    (variables : List (String × TypeExpr))
+    : List Term →
+      Except ValidationError (Array TypeExpr × Signature)
   | [] => .ok (#[], signature)
   | term :: rest => do
       let (type, signature) ← checkTerm signature typeVariables variables term
@@ -429,9 +526,14 @@ private partial def applyDeclared (signature : Signature) (typeVariables : List 
           pure (result, signature)
 
 -- partiality: term checking is part of the mutually recursive validator.
-private partial def checkTerm (signature : Signature) (typeVariables : List String)
-    (variables : List (String × TypeExpr)) : Term →
-    Except ValidationError (TypeExpr × Signature)
+private
+partial
+def checkTerm
+    (signature : Signature)
+    (typeVariables : List String)
+    (variables : List (String × TypeExpr))
+    : Term →
+      Except ValidationError (TypeExpr × Signature)
   | .variable name =>
       match variablesLookup variables name with
       | some type => .ok (type, signature)
@@ -457,9 +559,13 @@ private partial def checkTerm (signature : Signature) (typeVariables : List Stri
         applyDeclared signature typeVariables variables symbol arguments (atom "$i")
 end
 
-private def checkAtom (signature : Signature) (typeVariables : List String)
-    (variables : List (String × TypeExpr)) : Atom →
-    Except ValidationError Signature
+private
+def checkAtom
+    (signature : Signature)
+    (typeVariables : List String)
+    (variables : List (String × TypeExpr))
+    : Atom →
+      Except ValidationError Signature
   | .predicate symbol arguments => do
       let (result, signature) ←
         if symbol.raw == "$true" || symbol.raw == "$false" then
@@ -511,9 +617,14 @@ private def checkBinders (signature : Signature) (typeVariables : List String)
   pure (terms, localTypeVariables)
 
 -- partiality: formula checking is part of the mutually recursive validator.
-private partial def checkFormula (signature : Signature) (typeVariables : List String)
-    (variables : List (String × TypeExpr)) : Formula →
-    Except ValidationError Signature
+private
+partial
+def checkFormula
+    (signature : Signature)
+    (typeVariables : List String)
+    (variables : List (String × TypeExpr))
+    : Formula →
+      Except ValidationError Signature
   | .atom value => checkAtom signature typeVariables variables value
   | .truth | .falsity => .ok signature
   | .not body => checkFormula signature typeVariables variables body
@@ -540,23 +651,34 @@ def validateDeclaration (signature : Signature) (declaration : Declaration) :
   add signature declaration
 
 /-- Validate one typed formula and return the signature including inferred defaults. -/
-def validateFormula (signature : Signature) (formula : Formula) :
-    Except ValidationError Signature :=
+def validateFormula
+    (signature : Signature)
+    (formula : Formula)
+    : Except ValidationError Signature :=
   checkFormula (canonicalSignature signature) [] [] formula
 
 /-- Validate one parsed typed body and return the updated signature. -/
-def validateBody (signature : Signature) : Body → Except ValidationError Signature
+def validateBody
+    (signature : Signature)
+    : Body →
+      Except ValidationError Signature
   | .formula formula => validateFormula signature formula
   | .declaration declaration => validateDeclaration signature declaration
 
-private def validateBodies : Signature → List Body → Except ValidationError Signature
+private
+def validateBodies
+    : Signature →
+      List Body →
+      Except ValidationError Signature
   | signature, [] => .ok signature
   | signature, body :: rest => do
       let signature ← validateBody signature body
       validateBodies signature rest
 
 /-- Validate a sequence of parsed typed bodies in source order. -/
-def validateDocument (bodies : Array Body) : Except ValidationError Signature :=
+def validateDocument
+    (bodies : Array Body)
+    : Except ValidationError Signature :=
   validateBodies {} bodies.toList
 
 end TPTP.TFF

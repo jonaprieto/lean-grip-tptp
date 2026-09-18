@@ -23,7 +23,9 @@ inductive Name where
   | quoted (raw : String)
   deriving BEq, DecidableEq, Repr
 
-def Name.render : Name → String
+def Name.render
+    : Name →
+      String
   | .bare value => value
   | .quoted raw => raw
 
@@ -40,7 +42,9 @@ inductive Kind where
   | other (value : String)
   deriving BEq, DecidableEq, Repr
 
-def Kind.ofString : String → Kind
+def Kind.ofString
+    : String →
+      Kind
   | "fof" => .fof
   | "cnf" => .cnf
   | "tff" => .tff
@@ -49,7 +53,9 @@ def Kind.ofString : String → Kind
   | "tpi" => .tpi
   | value => .other value
 
-def Kind.render : Kind → String
+def Kind.render
+    : Kind →
+      String
   | .fof => "fof"
   | .cnf => "cnf"
   | .tff => "tff"
@@ -82,7 +88,9 @@ inductive Role where
   | other (value : String)
   deriving BEq, DecidableEq, Repr
 
-def Role.ofString : String → Role
+def Role.ofString
+    : String →
+      Role
   | "axiom" => .axiom
   | "hypothesis" => .hypothesis
   | "definition" => .definition
@@ -102,7 +110,9 @@ def Role.ofString : String → Role
   | "fi_predicates" => .finitePredicate
   | value => .other value
 
-def Role.render : Role → String
+def Role.render
+    : Role →
+      String
   | .axiom => "axiom"
   | .hypothesis => "hypothesis"
   | .definition => "definition"
@@ -176,29 +186,48 @@ inductive Expr where
   | forall (variables : Array String) (body : Expr)
   | exists (variables : Array String) (body : Expr)
 
-private def join (values : List String) : String :=
+private
+def join
+    (values : List String)
+    : String :=
   String.intercalate ", " values
 
-private def validName (first : Char → Bool) (name : String) : Bool :=
+private
+def validName
+    (first : Char → Bool)
+    (name : String)
+    : Bool :=
   match name.toList with
   | [] => false
   | character :: rest => first character && rest.all (fun value =>
       Char.isAlphanum value || value == '_' || value == '$')
 
-private def symbolName (kind name : String) : Except String String :=
+private
+def symbolName
+    (kind name : String)
+    : Except String String :=
   if validName (fun character => character.isLower || character == '$') name then
     .ok name
   else
     .error s!"invalid TPTP {kind} `{name}`"
 
-private def variableName (name : String) : Except String String :=
+private
+def variableName
+    (name : String)
+    : Except String String :=
   if validName (fun character => character.isUpper || character == '_') name then
     .ok name
   else
     .error s!"invalid TPTP variable `{name}`"
 
-private theorem sizeOf_lt_of_mem_array {α : Type} [SizeOf α] {value : α}
-    {values : Array α} (h : value ∈ values) : sizeOf value < sizeOf values := by
+private
+theorem sizeOf_lt_of_mem_array
+    {α : Type}
+    [SizeOf α]
+    {value : α}
+    {values : Array α}
+    (h : value ∈ values)
+    : sizeOf value < sizeOf values := by
   exact Array.sizeOf_lt_of_mem h
 
 def Term.toTPTP (term : Term) (bound : Array String := #[]) :
@@ -226,7 +255,10 @@ decreasing_by
       assumption)) ?_
   simp +arith
 
-private def exprDepth : Expr → Nat
+private
+def exprDepth
+    : Expr →
+      Nat
   | .atom _ _ | .truth | .falsity => 0
   | .not body => exprDepth body + 1
   | .and left right

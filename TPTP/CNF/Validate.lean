@@ -16,7 +16,9 @@ the shared defined and system symbol rules. Binding validation belongs to FOF.
 
 namespace TPTP.CNF
 
-def validate (clause : Clause) : Except FOF.ValidationError Unit :=
+def validate
+    (clause : Clause)
+    : Except FOF.ValidationError Unit :=
   do
     let _ ← clause.literals.toList.mapM fun literal =>
       match literal with

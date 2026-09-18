@@ -67,19 +67,28 @@ inductive Body where
 
 namespace TypeExpr.Internal
 
-def substitutionLookup (substitution : Array (String × TypeExpr))
-    (name : String) : Option TypeExpr :=
+def substitutionLookup
+    (substitution : Array (String × TypeExpr))
+    (name : String)
+    : Option TypeExpr :=
   substitution.find? (fun pair => pair.1 == name) |>.map Prod.snd
 
-def isTypeVariable (name : String) : Bool :=
+def isTypeVariable
+    (name : String)
+    : Bool :=
   match name.toList with
   | first :: _ => first.isUpper
   | [] => false
 
-def appendUnique (values : Array String) (value : String) : Array String :=
+def appendUnique
+    (values : Array String)
+    (value : String)
+    : Array String :=
   if values.toList.contains value then values else values.push value
 
-def freeVariablesAux : TypeExpr → Array String
+def freeVariablesAux
+    : TypeExpr →
+      Array String
   | .atom symbol => if isTypeVariable symbol.raw then #[symbol.raw] else #[]
   | .application _ arguments | .product arguments =>
       arguments.foldl (fun result type =>
@@ -92,7 +101,9 @@ def freeVariablesAux : TypeExpr → Array String
       (freeVariablesAux body).filter (fun name =>
         !variables.any (fun binder => binder.name == name))
 
-def binderNamesAux : TypeExpr → Array String
+def binderNamesAux
+    : TypeExpr →
+      Array String
   | .atom _ => #[]
   | .application _ arguments | .product arguments =>
       arguments.foldl (fun result type =>
@@ -105,7 +116,10 @@ def binderNamesAux : TypeExpr → Array String
       let values := variables.toList.map TypeBinder.name |>.toArray
       (binderNamesAux body).foldl appendUnique values
 
-def renameBound (oldName newName : String) : TypeExpr → TypeExpr
+def renameBound
+    (oldName newName : String)
+    : TypeExpr →
+      TypeExpr
   | .atom symbol =>
       if symbol.raw == oldName then .atom { raw := newName } else .atom symbol
   | .application constructor arguments =>
@@ -119,16 +133,28 @@ def renameBound (oldName newName : String) : TypeExpr → TypeExpr
       else
         .forall variables (renameBound oldName newName body)
 
-def maxLength (used : Array String) : Nat :=
+def maxLength
+    (used : Array String)
+    : Nat :=
   used.foldl (fun result value => max result value.length) 0
 
-def freshFallback (base : String) (used : Array String) : String :=
+def freshFallback
+    (base : String)
+    (used : Array String)
+    : String :=
   base ++ "_" ++ String.ofList (List.replicate (maxLength used + 1) '_')
 
-def freshCandidate (base : String) (index : Nat) : String :=
+def freshCandidate
+    (base : String)
+    (index : Nat)
+    : String :=
   if index == 0 then base else s!"{base}_{index}"
 
-def freshNameLoop (base : String) (used : Array String) (index fuel : Nat) : String :=
+def freshNameLoop
+    (base : String)
+    (used : Array String)
+    (index fuel : Nat)
+    : String :=
   match fuel with
   | 0 => freshFallback base used
   | fuel + 1 =>
@@ -138,10 +164,15 @@ def freshNameLoop (base : String) (used : Array String) (index fuel : Nat) : Str
       else
         candidate
 
-def freshName (base : String) (used : Array String) : String :=
+def freshName
+    (base : String)
+    (used : Array String)
+    : String :=
   freshNameLoop base used 0 (used.size + 1)
 
-def depth : TypeExpr → Nat
+def depth
+    : TypeExpr →
+      Nat
   | .atom _ => 0
   | .application _ arguments | .product arguments =>
       1 + arguments.foldl (fun result type => max result (depth type)) 0
@@ -149,15 +180,20 @@ def depth : TypeExpr → Nat
       1 + max (arguments.foldl (fun value type => max value (depth type)) 0) (depth result)
   | .forall _ body => 1 + depth body
 
-private theorem foldMax_ge : ∀ (types : List TypeExpr) (init : Nat),
-    init ≤ types.foldl (fun value type => max value (depth type)) init
+private
+theorem foldMax_ge
+    : ∀ (types : List TypeExpr) (init : Nat),
+      init ≤ types.foldl (fun value type => max value (depth type)) init
   | [], init => by simp
   | _ :: types, init => by
       simp only [List.foldl_cons]
       exact Nat.le_trans (Nat.le_max_left _ _) (foldMax_ge types _)
 
-private theorem list_depth_mem : ∀ (types : List TypeExpr) (init : Nat) (type : TypeExpr),
-    type ∈ types → depth type ≤ types.foldl (fun value type => max value (depth type)) init
+private
+theorem list_depth_mem
+    : ∀ (types : List TypeExpr) (init : Nat) (type : TypeExpr),
+      type ∈ types →
+      depth type ≤ types.foldl (fun value type => max value (depth type)) init
   | [], _, _, h => by simp at h
   | head :: tail, init, type, h => by
       simp only [List.mem_cons] at h
@@ -170,17 +206,24 @@ private theorem list_depth_mem : ∀ (types : List TypeExpr) (init : Nat) (type 
           exact Nat.le_trans (list_depth_mem tail (max init (depth head)) type h)
             (by exact Nat.le_refl _)
 
-private theorem array_depth_mem (types : Array TypeExpr) (type : TypeExpr) (h : type ∈ types) :
-    depth type ≤ types.foldl (fun value type => max value (depth type)) 0 := by
+private
+theorem array_depth_mem
+    (types : Array TypeExpr)
+    (type : TypeExpr)
+    (h : type ∈ types)
+    : depth type ≤ types.foldl (fun value type => max value (depth type)) 0 := by
   rw [← Array.foldl_toList]
   apply list_depth_mem types.toList 0 type
   exact Array.mem_def.mp h
 
-private theorem list_foldl_map_congr_mem {α β γ : Type} (f : α → β)
-    (g : γ → β → γ) (g' : γ → α → γ) :
-    ∀ (values : List α) (init : γ),
-      (∀ value, value ∈ values → ∀ accumulator,
-        g accumulator (f value) = g' accumulator value) →
+private
+theorem list_foldl_map_congr_mem
+    {α β γ : Type}
+    (f : α → β)
+    (g : γ → β → γ)
+    (g' : γ → α → γ)
+    : ∀ (values : List α) (init : γ),
+      (∀ value, value ∈ values → ∀ accumulator, g accumulator (f value) = g' accumulator value) →
       (values.map f).foldl g init = values.foldl g' init
   | [], init, _ => rfl
   | value :: values, init, h => by
@@ -190,18 +233,26 @@ private theorem list_foldl_map_congr_mem {α β γ : Type} (f : α → β)
       intro other hOther accumulator
       exact h other (by simp [hOther]) accumulator
 
-private theorem array_foldl_map_congr_mem {α β γ : Type} (values : Array α) (f : α → β)
-    (g : γ → β → γ) (g' : γ → α → γ)
-    (h : ∀ value, value ∈ values → ∀ accumulator,
-      g accumulator (f value) = g' accumulator value) (init : γ) :
-    (values.map f).foldl g init = values.foldl g' init := by
+private
+theorem array_foldl_map_congr_mem
+    {α β γ : Type}
+    (values : Array α)
+    (f : α → β)
+    (g : γ → β → γ)
+    (g' : γ → α → γ)
+    (h : ∀ value, value ∈ values → ∀ accumulator, g accumulator (f value) = g' accumulator value)
+    (init : γ)
+    : (values.map f).foldl g init = values.foldl g' init := by
   rw [← Array.foldl_toList, ← Array.foldl_toList, Array.toList_map]
   apply list_foldl_map_congr_mem f g g' values.toList init
   intro value hValue accumulator
   exact h value (Array.mem_def.mpr hValue) accumulator
 
-private theorem depth_renameBound (oldName newName : String) (type : TypeExpr) :
-    depth (renameBound oldName newName type) = depth type := by
+private
+theorem depth_renameBound
+    (oldName newName : String)
+    (type : TypeExpr)
+    : depth (renameBound oldName newName type) = depth type := by
   cases type with
   | atom symbol =>
       simp only [renameBound]
@@ -239,9 +290,11 @@ decreasing_by
     | exact Nat.lt_succ_of_le (Nat.le_max_right _ _)
     | simpa [Nat.succ_eq_add_one, Nat.add_comm] using Nat.lt_succ_self _
 
-def renameBinderStep (replacementFree used : Array String)
-    (state : Array TypeBinder × TypeExpr) (binder : TypeBinder) :
-    Array TypeBinder × TypeExpr :=
+def renameBinderStep
+    (replacementFree used : Array String)
+    (state : Array TypeBinder × TypeExpr)
+    (binder : TypeBinder)
+    : Array TypeBinder × TypeExpr :=
   let (variables, body) := state
   if replacementFree.toList.contains binder.name then
     let fresh := freshName binder.name used
@@ -271,11 +324,16 @@ def renameBinderStep (replacementFree used : Array String)
   rw [← Array.foldl_toList]
   exact depth_binderFold replacementFree used variables.toList #[] body
 
-def substitutionFreeVariables (substitution : Array (String × TypeExpr)) : Array String :=
+def substitutionFreeVariables
+    (substitution : Array (String × TypeExpr))
+    : Array String :=
   substitution.foldl (fun result pair =>
     (freeVariablesAux pair.2).foldl appendUnique result) #[]
 
-def substituteAux (type : TypeExpr) (substitution : Array (String × TypeExpr)) : TypeExpr :=
+def substituteAux
+    (type : TypeExpr)
+    (substitution : Array (String × TypeExpr))
+    : TypeExpr :=
   match type with
   | .atom symbol => substitutionLookup substitution symbol.raw |>.getD (.atom symbol)
   | .application constructor arguments =>
@@ -321,11 +379,16 @@ decreasing_by
 end TypeExpr.Internal
 
 /-- Collect free type variables in source order. -/
-def TypeExpr.freeVariables (type : TypeExpr) : Array String :=
+def TypeExpr.freeVariables
+    (type : TypeExpr)
+    : Array String :=
   Internal.freeVariablesAux type
 
 /-- Capture-avoiding substitution for the type variables in a type expression. -/
-def TypeExpr.substitute (substitution : Array (String × TypeExpr)) (type : TypeExpr) : TypeExpr :=
+def TypeExpr.substitute
+    (substitution : Array (String × TypeExpr))
+    (type : TypeExpr)
+    : TypeExpr :=
   Internal.substituteAux type substitution
 
 /-- Rename a bound type variable without capturing a free variable. -/
@@ -364,12 +427,18 @@ inductive AlphaType where
   | forall (arity : Nat) (body : AlphaType)
   deriving BEq, Repr
 
-def boundIndex (name : String) : List String → Option Nat
+def boundIndex
+    (name : String)
+    : List String →
+      Option Nat
   | [] => none
   | bound :: rest =>
       if bound == name then some 0 else (boundIndex name rest).map (· + 1)
 
-def alphaNormalize : List String → TypeExpr → AlphaType
+def alphaNormalize
+    : List String →
+      TypeExpr →
+      AlphaType
   | bound, .atom symbol =>
       match boundIndex symbol.raw bound with
       | some index => .bound index
@@ -385,7 +454,9 @@ def alphaNormalize : List String → TypeExpr → AlphaType
 
 end TypeExpr.Internal
 
-def TypeExpr.alphaEquivalent (left right : TypeExpr) : Bool :=
+def TypeExpr.alphaEquivalent
+    (left right : TypeExpr)
+    : Bool :=
   TypeExpr.Internal.alphaNormalize [] left == TypeExpr.Internal.alphaNormalize [] right
 
 end TPTP.TFF

@@ -8,10 +8,16 @@ import TPTP
 
 open TPTP
 
-private def check (condition : Bool) (message : String) : IO Unit :=
+private
+def check
+    (condition : Bool)
+    (message : String)
+    : IO Unit :=
   if condition then pure () else throw (IO.userError message)
 
-private def documentSource : String :=
+private
+def documentSource
+    : String :=
   "% a comment\n" ++
     "include('Axioms/foo.p', [a1, a2]).\n" ++
     "fof(ax, axiom, p(a)).\n" ++

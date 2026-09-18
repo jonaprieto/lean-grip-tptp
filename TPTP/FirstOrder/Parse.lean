@@ -20,17 +20,25 @@ open Grip GParser
 
 abbrev P (α : Type) := GParser conditional α
 
-private def whitespace : GParser conditional Unit :=
+private
+def whitespace
+    : GParser conditional Unit :=
   (fun _ => ()) <$> GParser.satisfy Ascii.isWs
 
-private def lineComment : GParser conditional Unit :=
+private
+def lineComment
+    : GParser conditional Unit :=
   (fun _ => ()) <$> (GParser.byte (Ascii.code '%') *> GParser.takeWhile (· != Ascii.lf))
 
-private def blockComment : GParser conditional Unit :=
+private
+def blockComment
+    : GParser conditional Unit :=
   (fun _ => ()) <$> (GParser.string "/*" *>
     GParser.manyTill (GParser.satisfy (fun _ => true)) (GParser.string "*/"))
 
-private def triviaUnit : GParser conditional Unit :=
+private
+def triviaUnit
+    : GParser conditional Unit :=
   GParser.dispatch fun byte =>
     if byte == Ascii.code '%' then lineComment
     else if byte == Ascii.slash then blockComment
@@ -38,64 +46,97 @@ private def triviaUnit : GParser conditional Unit :=
 
 def trivia : GParser flexible Nat := GParser.skipMany triviaUnit
 
-private def visible (quote : UInt8) (byte : UInt8) : Bool :=
+private
+def visible
+    (quote : UInt8)
+    (byte : UInt8)
+    : Bool :=
   32 ≤ byte && byte ≤ 126 && byte != quote && byte != Ascii.backslash
 
-private def escaped (quote : UInt8) : GParser conditional String :=
+private
+def escaped
+    (quote : UInt8)
+    : GParser conditional String :=
   GParser.map (fun byte => String.ofList ['\\', Char.ofNat byte.toNat])
     (GParser.byte Ascii.backslash *> GParser.satisfy (fun byte => byte == quote ||
       byte == Ascii.backslash))
 
-private def quotedBody (quote : UInt8) : GParser flexible String :=
+private
+def quotedBody
+    (quote : UInt8)
+    : GParser flexible String :=
   String.join <$> GParser.many (GParser.alt
     (GParser.capture (GParser.takeWhile1 (visible quote)))
     (escaped quote))
 
-private def quotedBodyNonempty (quote : UInt8) : GParser conditional String :=
+private
+def quotedBodyNonempty
+    (quote : UInt8)
+    : GParser conditional String :=
   String.join <$> GParser.many1 (GParser.alt
     (GParser.capture (GParser.takeWhile1 (visible quote)))
     (escaped quote))
 
-private def singleQuoted : P Symbol :=
+private
+def singleQuoted
+    : P Symbol :=
   Symbol.mk <$> (GParser.capture (GParser.byte Ascii.apostrophe *>
     quotedBodyNonempty Ascii.apostrophe <* GParser.byte Ascii.apostrophe)
     <* trivia)
 
-private def distinctObject : P Symbol :=
+private
+def distinctObject
+    : P Symbol :=
   Symbol.mk <$> (GParser.capture (GParser.byte 34 *> quotedBody 34 <* GParser.byte 34)
     <* trivia)
 
 private def wordTail : UInt8 → Bool := fun byte => Ascii.isAlphaNum byte || byte == 95
 
-private def lowerWord : P Symbol :=
+private
+def lowerWord
+    : P Symbol :=
   Symbol.mk <$> (GParser.capture
     (GParser.satisfy Ascii.isLower *> GParser.takeWhile wordTail) <* trivia)
 
-private def upperWord : P String :=
+private
+def upperWord
+    : P String :=
   GParser.capture (GParser.satisfy Ascii.isUpper *> GParser.takeWhile wordTail) <* trivia
 
-private def backquoted : P Symbol :=
+private
+def backquoted
+    : P Symbol :=
   Symbol.mk <$> (GParser.capture
     (GParser.byte 96 *> GParser.satisfy Ascii.isUpper *> GParser.takeWhile wordTail) <* trivia)
 
-private def dollarWord : P Symbol :=
+private
+def dollarWord
+    : P Symbol :=
   Symbol.mk <$> (GParser.capture
     (GParser.byte (Ascii.code '$') *> GParser.optional (GParser.byte (Ascii.code '$')) *>
       GParser.takeWhile (fun byte => Ascii.isAlphaNum byte || byte == 95)) <* trivia)
 
 private def zero : P Unit := (fun _ => ()) <$> GParser.ch '0'
 
-private def positiveInteger : P Unit :=
+private
+def positiveInteger
+    : P Unit :=
   (fun _ => ()) <$> (GParser.satisfy (fun byte => 49 ≤ byte && byte ≤ 57) *>
     GParser.takeWhile Ascii.isDigit)
 
-private def unsignedInteger : P Unit :=
+private
+def unsignedInteger
+    : P Unit :=
   GParser.chooseG zero [positiveInteger]
 
-private def digits : P Unit :=
+private
+def digits
+    : P Unit :=
   (fun _ => ()) <$> GParser.takeWhile1 Ascii.isDigit
 
-private def sign : P Unit :=
+private
+def sign
+    : P Unit :=
   GParser.chooseG ((fun _ => ()) <$> GParser.ch '+')
     [(fun _ => ()) <$> GParser.ch '-']
 
@@ -110,10 +151,14 @@ private def decimalFraction : P Unit := gdo
   digits
   grade_by by decide
 
-private def exponentMantissa : P Unit :=
+private
+def exponentMantissa
+    : P Unit :=
   GParser.chooseG decimalFraction [unsignedInteger]
 
-private def exponentMarker : P Unit :=
+private
+def exponentMarker
+    : P Unit :=
   GParser.chooseG ((fun _ => ()) <$> GParser.ch 'e')
     [(fun _ => ()) <$> GParser.ch 'E']
 
@@ -123,7 +168,9 @@ private def decimalExponent : P Unit := gdo
   signedDigits
   grade_by by decide
 
-private def unsignedReal : P Unit :=
+private
+def unsignedReal
+    : P Unit :=
   GParser.chooseG decimalExponent [decimalFraction]
 
 private def unsignedRational : P Unit := gdo
@@ -132,7 +179,9 @@ private def unsignedRational : P Unit := gdo
   positiveInteger
   grade_by by decide
 
-private def unsignedNumber : P Unit :=
+private
+def unsignedNumber
+    : P Unit :=
   GParser.chooseG unsignedReal [unsignedRational, unsignedInteger]
 
 private def numberCore : P Unit := gdo
@@ -140,10 +189,13 @@ private def numberCore : P Unit := gdo
   unsignedNumber
   grade_by by decide
 
-private def number : P Symbol :=
+private
+def number
+    : P Symbol :=
   Symbol.mk <$> (GParser.capture numberCore <* trivia)
 
-def symbol : P Symbol :=
+def symbol
+    : P Symbol :=
   GParser.dispatch fun byte =>
     if byte == Ascii.code '$' then dollarWord
     else if byte == Ascii.apostrophe then singleQuoted
@@ -152,12 +204,16 @@ def symbol : P Symbol :=
     else if Ascii.isLower byte then lowerWord
     else number
 
-private def predicateSymbol : P Symbol :=
+private
+def predicateSymbol
+    : P Symbol :=
   GParser.chooseG dollarWord [singleQuoted, backquoted, lowerWord]
 
 def variableParser : P String := upperWord
 
-def argumentList (term : P Term) : P (Array Term) :=
+def argumentList
+    (term : P Term)
+    : P (Array Term) :=
   List.toArray <$> (GParser.ch '(' *> trivia *>
     GParser.sepBy1 term (GParser.ch ',' *> trivia) <* GParser.ch ')' <* trivia)
 
@@ -167,14 +223,19 @@ private def symbolTerm (recursive : P Term) : P Term := gdo
   return arguments.map (Term.function symbol) |>.getD (.constant symbol)
   grade_by by decide
 
-def term : P Term :=
+def term
+    : P Term :=
   GParser.fix fun recursive =>
     GParser.chooseG (Term.variable <$> variableParser) [symbolTerm recursive]
 
-private def equality : P Atom :=
+private
+def equality
+    : P Atom :=
   FirstOrder.Atom.equality <$> term <* (GParser.ch '=' *> trivia) <*> term
 
-private def inequality : P Atom :=
+private
+def inequality
+    : P Atom :=
   FirstOrder.Atom.inequality <$> term <* (GParser.string "!=" *> trivia) <*> term
 
 private def predicate : P Atom := gdo

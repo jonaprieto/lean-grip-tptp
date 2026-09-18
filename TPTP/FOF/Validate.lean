@@ -26,7 +26,9 @@ inductive ValidationError where
   | invalidTermApplication (name : String)
   deriving BEq, Repr
 
-def ValidationError.message : ValidationError → String
+def ValidationError.message
+    : ValidationError →
+      String
   | .unboundVariable name => s!"unbound variable `{name}`"
   | .emptyBinder => "quantifier variable list cannot be empty"
   | .duplicateBinder name => s!"duplicate bound variable `{name}`"
@@ -38,32 +40,48 @@ def ValidationError.message : ValidationError → String
 instance : ToString ValidationError where
   toString := ValidationError.message
 
-private def firstDuplicate : List String → Option String
+private
+def firstDuplicate
+    : List String →
+      Option String
   | [] => none
   | name :: rest => if rest.contains name then some name else firstDuplicate rest
 
-private def definedPredicates : List String :=
+private
+def definedPredicates
+    : List String :=
   [ "$distinct", "$less", "$lesseq", "$greater", "$greatereq", "$is_int", "$is_rat" ]
 
-private def definedTerms : List String :=
+private
+def definedTerms
+    : List String :=
   [ "$uminus", "$sum", "$difference", "$product", "$quotient", "$quotient_e"
   , "$quotient_t", "$quotient_f", "$remainder_e", "$remainder_t", "$remainder_f"
   , "$floor", "$ceiling", "$truncate", "$round", "$to_int", "$to_rat", "$to_real" ]
 
-private def symbolClass (name : String) : Option Bool :=
+private
+def symbolClass
+    (name : String)
+    : Option Bool :=
   match name.toList with
   | '$' :: '$' :: _ => some true
   | '$' :: _ => some false
   | _ => none
 
-private def validateTermSymbol (symbol : FirstOrder.Symbol) : Except ValidationError Unit :=
+private
+def validateTermSymbol
+    (symbol : FirstOrder.Symbol)
+    : Except ValidationError Unit :=
   match symbolClass symbol.raw with
   | none | some true => .ok ()
   | some false =>
       if definedTerms.contains symbol.raw then .ok ()
       else .error (.unknownDefinedSymbol symbol.raw)
 
-private def validateTermApplication (symbol : FirstOrder.Symbol) : Except ValidationError Unit :=
+private
+def validateTermApplication
+    (symbol : FirstOrder.Symbol)
+    : Except ValidationError Unit :=
   match symbol.raw.toList with
   | '"' :: _ | '+' :: _ | '-' :: _ => .error (.invalidTermApplication symbol.raw)
   | first :: _ =>
@@ -73,8 +91,11 @@ private def validateTermApplication (symbol : FirstOrder.Symbol) : Except Valida
         validateTermSymbol symbol
   | [] => .error (.invalidTermApplication symbol.raw)
 
-private def validatePredicateSymbol (symbol : FirstOrder.Symbol)
-    (arguments : Array FirstOrder.Term) : Except ValidationError Unit :=
+private
+def validatePredicateSymbol
+    (symbol : FirstOrder.Symbol)
+    (arguments : Array FirstOrder.Term)
+    : Except ValidationError Unit :=
   match symbolClass symbol.raw with
   | none | some true => .ok ()
   | some false =>
@@ -99,8 +120,12 @@ private def validatePredicateSymbol (symbol : FirstOrder.Symbol)
         .error (.unknownDefinedSymbol symbol.raw)
 
 -- partiality: recursive terms contain Array children; validation stays private and pure.
-private partial def validateTerm (bound : List String) :
-    FirstOrder.Term → Except ValidationError Unit
+private
+partial
+def validateTerm
+    (bound : List String)
+    : FirstOrder.Term →
+      Except ValidationError Unit
   | .variable name =>
       if bound.contains name then .ok () else .error (.unboundVariable name)
   | .constant symbol => validateTermSymbol symbol
@@ -110,7 +135,11 @@ private partial def validateTerm (bound : List String) :
       pure ()
 
 -- partiality: the same Array-backed syntax traversal is reused for symbol-only validation.
-private partial def validateTermSymbols : FirstOrder.Term → Except ValidationError Unit
+private
+partial
+def validateTermSymbols
+    : FirstOrder.Term →
+      Except ValidationError Unit
   | .variable _ => .ok ()
   | .constant symbol => validateTermSymbol symbol
   | .function symbol arguments => do
@@ -119,7 +148,9 @@ private partial def validateTermSymbols : FirstOrder.Term → Except ValidationE
       pure ()
 
 /-- Validate defined and system symbol usage without imposing FOF variable scope. -/
-def validateAtomSymbols (atom : FirstOrder.Atom) : Except ValidationError Unit :=
+def validateAtomSymbols
+    (atom : FirstOrder.Atom)
+    : Except ValidationError Unit :=
   match atom with
   | .predicate symbol arguments => do
       let _ ← validatePredicateSymbol symbol arguments
@@ -129,7 +160,11 @@ def validateAtomSymbols (atom : FirstOrder.Atom) : Except ValidationError Unit :
       let _ ← validateTermSymbols left
       validateTermSymbols right
 
-private def validateAtom (bound : List String) : FirstOrder.Atom → Except ValidationError Unit
+private
+def validateAtom
+    (bound : List String)
+    : FirstOrder.Atom →
+      Except ValidationError Unit
   | .predicate symbol arguments => do
       let _ ← validatePredicateSymbol symbol arguments
       let _ ← arguments.toList.mapM (validateTerm bound)
@@ -139,7 +174,12 @@ private def validateAtom (bound : List String) : FirstOrder.Atom → Except Vali
       validateTerm bound right
 
 -- partiality: formula validation follows Array-backed term validation and remains private.
-private partial def validateFormula (bound : List String) : Formula → Except ValidationError Unit
+private
+partial
+def validateFormula
+    (bound : List String)
+    : Formula →
+      Except ValidationError Unit
   | .atom value => validateAtom bound value
   | .truth | .falsity => .ok ()
   | .not body => validateFormula bound body
@@ -161,7 +201,9 @@ private partial def validateFormula (bound : List String) : Formula → Except V
         | some name => .error (.duplicateBinder name)
         | none => validateFormula (bound ++ variables.toList) body
 
-def validate (formula : Formula) : Except ValidationError Unit :=
+def validate
+    (formula : Formula)
+    : Except ValidationError Unit :=
   validateFormula [] formula
 
 end TPTP.FOF

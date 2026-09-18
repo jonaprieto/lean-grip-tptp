@@ -16,7 +16,10 @@ precedence to its non-associative connectives.
 
 namespace TPTP.FOF
 
-private def renderFormula : Formula → String
+private
+def renderFormula
+    : Formula →
+      String
   | .atom value => value.render
   | .truth => "$true"
   | .falsity => "$false"
@@ -34,7 +37,9 @@ private def renderFormula : Formula → String
   | .exists variables body =>
       s!"? [{String.intercalate ", " variables.toList}] : ({renderFormula body})"
 
-def Formula.render (formula : Formula) : String :=
+def Formula.render
+    (formula : Formula)
+    : String :=
   renderFormula formula
 
 instance : ToString Formula where

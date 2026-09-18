@@ -13,19 +13,31 @@ import TPTP.FirstOrder.Render
 
 namespace TPTP.TFF
 
-private def join (values : Array String) : String :=
+private
+def join
+    (values : Array String)
+    : String :=
   String.intercalate ", " values.toList
 
-private def joinProduct (values : Array String) : String :=
+private
+def joinProduct
+    (values : Array String)
+    : String :=
   String.intercalate " * " values.toList
 
-private def renderTypeBinder (binder : TypeBinder) : String :=
+private
+def renderTypeBinder
+    (binder : TypeBinder)
+    : String :=
   s!"{binder.name}: $tType"
 
 -- partiality: TypeExpr stores recursive children in Arrays. A total renderer would need a
 -- separate depth-indexed traversal; keep the direct public API until that representation is
 -- changed or a measured stack renderer is justified.
-partial def TypeExpr.render : TypeExpr → String
+partial
+def TypeExpr.render
+    : TypeExpr →
+      String
   | .atom symbol => symbol.render
   | .application constructor arguments =>
       s!"{constructor.render}({String.intercalate ", " (arguments.toList.map TypeExpr.render)})"
@@ -45,10 +57,16 @@ partial def TypeExpr.render : TypeExpr → String
 instance : ToString TypeExpr where
   toString := TypeExpr.render
 
-private def renderVariable (binder : TypedVariable) : String :=
+private
+def renderVariable
+    (binder : TypedVariable)
+    : String :=
   binder.type.map (fun type => s!"{binder.name}: {type.render}") |>.getD binder.name
 
-private def formulaDepth : Formula → Nat
+private
+def formulaDepth
+    : Formula →
+      Nat
   | .atom _ | .truth | .falsity => 0
   | .not body => formulaDepth body + 1
   | .and left right
@@ -61,7 +79,9 @@ private def formulaDepth : Formula → Nat
   | .nand left right => max (formulaDepth left) (formulaDepth right) + 1
   | .forall _ body | .exists _ body | .unique _ body => formulaDepth body + 1
 
-def Formula.render : Formula → String
+def Formula.render
+    : Formula →
+      String
   | .atom value => value.render
   | .truth => "$true"
   | .falsity => "$false"
@@ -89,7 +109,9 @@ decreasing_by
 instance : ToString Formula where
   toString := Formula.render
 
-def Declaration.render (declaration : Declaration) : String :=
+def Declaration.render
+    (declaration : Declaration)
+    : String :=
   s!"{declaration.symbol.render}: {declaration.type.render}"
 
 instance : ToString Declaration where
