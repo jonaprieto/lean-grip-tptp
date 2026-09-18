@@ -8,9 +8,7 @@ import TPTP
 
 open TPTP
 
-private
-def source
-    : String :=
+private def source : String :=
   "include('Axioms/foo.p').\n" ++
     "fof(goal, conjecture, ! [X] : (p(X) => q(X)),\n" ++
     "  inference(resolution, [status(thm)], [foo])).\n" ++
@@ -24,7 +22,10 @@ def source
     "tff(empty_type, type, empty: !>[A:$tType] : (list(A) > $o)).\n" ++
     "tff(tf1_goal, conjecture, ![A:$tType] : empty(A,nil(A))).\n"
 
-private def printStatement (statement : Statement) : IO Unit := do
+private
+def printStatement
+    (statement : Statement)
+    : IO Unit := do
   IO.println s!"{statement.kind} {statement.name}: {statement.formula}"
   match statement.kind with
   | .fof =>

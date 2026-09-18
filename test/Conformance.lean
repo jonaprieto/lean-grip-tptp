@@ -24,7 +24,11 @@ def isOk
   | .ok _ => true
   | .error _ => false
 
-private def checkFOF (accepted : Bool) (label source : String) : IO Unit := do
+private
+def checkFOF
+    (accepted : Bool)
+    (label source : String)
+    : IO Unit := do
   let result := FOF.parseFormulaString source
   if (isOk result == accepted) then
     match result with
@@ -39,7 +43,11 @@ private def checkFOF (accepted : Bool) (label source : String) : IO Unit := do
     | .error error =>
         throw (IO.userError s!"FOF unexpectedly rejected {label}: {error.pretty source.toUTF8}")
 
-private def checkCNF (accepted : Bool) (label source : String) : IO Unit := do
+private
+def checkCNF
+    (accepted : Bool)
+    (label source : String)
+    : IO Unit := do
   let result := CNF.parseFormulaString source
   if (isOk result == accepted) then
     match result with
@@ -140,7 +148,11 @@ private def cnfRejected : List (String × String) := [
   ("trailing argument comma", "p(a,)")
 ]
 
-private def checkTFFFormula (accepted : Bool) (label source : String) : IO Unit := do
+private
+def checkTFFFormula
+    (accepted : Bool)
+    (label source : String)
+    : IO Unit := do
   let result := TFF.parseFormulaString source
   if (isOk result == accepted) then
     match result with
@@ -162,7 +174,11 @@ private def checkTFFFormula (accepted : Bool) (label source : String) : IO Unit 
     | .error error =>
         throw (IO.userError s!"TFF unexpectedly rejected {label}: {error.pretty source.toUTF8}")
 
-private def checkTFFDeclaration (accepted : Bool) (label source : String) : IO Unit := do
+private
+def checkTFFDeclaration
+    (accepted : Bool)
+    (label source : String)
+    : IO Unit := do
   let result := TFF.parseTypeDeclarationString source
   match result with
   | .error error =>

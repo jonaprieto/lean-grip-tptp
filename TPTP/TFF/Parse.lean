@@ -24,14 +24,10 @@ open TPTP.FirstOrder.Parser
 
 abbrev P (α : Type) := GParser conditional α
 
-private
-def typeSymbol
-    : P Symbol :=
+private def typeSymbol : P Symbol :=
   GParser.chooseG (Symbol.mk <$> variableParser) [FirstOrder.Parser.symbol]
 
-private
-def typeParser
-    : P TypeExpr :=
+private def typeParser : P TypeExpr :=
   GParser.fix fun recursive =>
     let typeArguments : P (Array TypeExpr) :=
       List.toArray <$> (GParser.ch '(' *> trivia *>
@@ -84,16 +80,12 @@ private def typeDeclarationAtom : P Declaration := gdo
   return { symbol, type }
   grade_by by decide
 
-private
-def typeDeclaration
-    : P Declaration :=
+private def typeDeclaration : P Declaration :=
   GParser.chooseG
     (GParser.ch '(' *> trivia *> typeDeclarationAtom <* GParser.ch ')' <* trivia)
     [typeDeclarationAtom]
 
-private
-def atomFormula
-    : P Formula :=
+private def atomFormula : P Formula :=
   FirstOrder.Parser.atom.map fun value =>
     match value with
     | .predicate symbol arguments =>
@@ -111,9 +103,7 @@ private def typedVariable : P TypedVariable := gdo
   return { name, type }
   grade_by by decide
 
-private
-def variableList
-    : P (Array TypedVariable) :=
+private def variableList : P (Array TypedVariable) :=
   List.toArray <$> (GParser.ch '[' *> trivia *>
     GParser.sepBy1 typedVariable (GParser.ch ',' *> trivia) <* GParser.ch ']' <* trivia)
 
@@ -135,9 +125,7 @@ private def negation (unitFormula : P Formula) : P Formula := gdo
   return .not body
   grade_by by decide
 
-private
-def nonassocOperator
-    : P (Formula → Formula → Formula) :=
+private def nonassocOperator : P (Formula → Formula → Formula) :=
   GParser.chooseG
     ((fun _ => Formula.iff) <$> (GParser.string "<=>" <* trivia))
     [ (fun _ => Formula.implies) <$> (GParser.string "=>" <* trivia)
@@ -147,14 +135,10 @@ def nonassocOperator
     , (fun _ => Formula.nand) <$> (GParser.string "~&" <* trivia)
     ]
 
-private
-def andSeparator
-    : P Unit :=
+private def andSeparator : P Unit :=
   (fun _ => ()) <$> (GParser.ch '&' <* trivia)
 
-private
-def orSeparator
-    : P Unit :=
+private def orSeparator : P Unit :=
   (fun _ => ()) <$> (GParser.ch '|' <* trivia)
 
 private def nonassocFormula (unitFormula : P Formula) : P Formula := gdo
@@ -178,9 +162,7 @@ def orFormula
   GParser.map (fun (first, rest) => rest.foldl Formula.or first)
     (GParser.map2 Prod.mk unitFormula (GParser.many1 (orSeparator *> unitFormula)))
 
-private
-def formulaParser
-    : P Formula :=
+private def formulaParser : P Formula :=
   GParser.fix fun formula =>
     let unitary (unitFormula : P Formula) : P Formula :=
       GParser.dispatch fun byte =>

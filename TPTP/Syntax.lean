@@ -230,8 +230,10 @@ theorem sizeOf_lt_of_mem_array
     : sizeOf value < sizeOf values := by
   exact Array.sizeOf_lt_of_mem h
 
-def Term.toTPTP (term : Term) (bound : Array String := #[]) :
-    Except String String :=
+def Term.toTPTP
+    (term : Term)
+    (bound : Array String := #[])
+    : Except String String :=
   match term with
   | .var name =>
       if bound.toList.contains name then
@@ -267,8 +269,10 @@ def exprDepth
   | .iff left right => max (exprDepth left) (exprDepth right) + 1
   | .forall _ body | .exists _ body => exprDepth body + 1
 
-def Expr.toTPTP (formula : Expr) (bound : Array String := #[]) :
-    Except String String :=
+def Expr.toTPTP
+    (formula : Expr)
+    (bound : Array String := #[])
+    : Except String String :=
   match formula with
   | .atom predicate arguments => do
       let predicate ← symbolName "predicate" predicate
