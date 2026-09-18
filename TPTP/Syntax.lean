@@ -189,14 +189,16 @@ inductive Expr where
 private
 def join
     (values : List String)
-    : String :=
+    : String
+    :=
   String.intercalate ", " values
 
 private
 def validName
     (first : Char → Bool)
     (name : String)
-    : Bool :=
+    : Bool
+    :=
   match name.toList with
   | [] => false
   | character :: rest => first character && rest.all (fun value =>
@@ -205,7 +207,8 @@ def validName
 private
 def symbolName
     (kind name : String)
-    : Except String String :=
+    : Except String String
+    :=
   if validName (fun character => character.isLower || character == '$') name then
     .ok name
   else
@@ -214,7 +217,8 @@ def symbolName
 private
 def variableName
     (name : String)
-    : Except String String :=
+    : Except String String
+    :=
   if validName (fun character => character.isUpper || character == '_') name then
     .ok name
   else
@@ -227,13 +231,15 @@ theorem sizeOf_lt_of_mem_array
     {value : α}
     {values : Array α}
     (h : value ∈ values)
-    : sizeOf value < sizeOf values := by
+    : sizeOf value < sizeOf values
+    := by
   exact Array.sizeOf_lt_of_mem h
 
 def Term.toTPTP
     (term : Term)
     (bound : Array String := #[])
-    : Except String String :=
+    : Except String String
+    :=
   match term with
   | .var name =>
       if bound.toList.contains name then
@@ -272,7 +278,8 @@ def exprDepth
 def Expr.toTPTP
     (formula : Expr)
     (bound : Array String := #[])
-    : Except String String :=
+    : Except String String
+    :=
   match formula with
   | .atom predicate arguments => do
       let predicate ← symbolName "predicate" predicate

@@ -22,7 +22,8 @@ private
 def formulaError
     (statement : Statement)
     (error : FormulaError)
-    : String :=
+    : String
+    :=
   match error with
   | .syntax error => error.pretty statement.formula.toUTF8
   | .wrongKind expected actual => s!"expected {expected}, found {actual}"

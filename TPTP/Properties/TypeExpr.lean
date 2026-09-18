@@ -48,7 +48,8 @@ theorem maxLength_mem
     (used : Array String)
     (value : String)
     (h : value ∈ used)
-    : value.length ≤ TypeExpr.Internal.maxLength used := by
+    : value.length ≤ TypeExpr.Internal.maxLength used
+    := by
   change value.length ≤ used.foldl (fun n value => max n value.length) 0
   rw [← Array.foldl_toList]
   exact list_maxLength_mem used.toList 0 value (Array.mem_def.mp h)
@@ -56,7 +57,8 @@ theorem maxLength_mem
 theorem freshFallback_not_mem
     (base : String)
     (used : Array String)
-    : TypeExpr.Internal.freshFallback base used ∉ used := by
+    : TypeExpr.Internal.freshFallback base used ∉ used
+    := by
   intro h
   have hLength := maxLength_mem used (TypeExpr.Internal.freshFallback base used) h
   have hTooLong : TypeExpr.Internal.maxLength used <
@@ -85,7 +87,8 @@ theorem freshNameLoop_not_mem
 theorem freshName_not_mem
     (base : String)
     (used : Array String)
-    : TypeExpr.Internal.freshName base used ∉ used := by
+    : TypeExpr.Internal.freshName base used ∉ used
+    := by
   exact freshNameLoop_not_mem base used 0 (used.size + 1)
 
 /-- The name selected for an alpha-renamed binder is outside the protected set. -/
@@ -132,7 +135,8 @@ theorem substitute_mapping_equation (substitution : Array (String × TypeExpr))
 theorem alphaRename_same
     (name : String)
     (type : TypeExpr)
-    : type.alphaRename name name = type := by
+    : type.alphaRename name name = type
+    := by
   have h : (name == name) = true := by simp
   unfold TypeExpr.alphaRename
   rw [h]
@@ -141,7 +145,8 @@ theorem alphaRename_same
 theorem alphaRename_atom
     (oldName newName : String)
     (symbol : Symbol)
-    : (TypeExpr.atom symbol).alphaRename oldName newName = .atom symbol := by
+    : (TypeExpr.atom symbol).alphaRename oldName newName = .atom symbol
+    := by
   by_cases h : oldName == newName <;> simp [TypeExpr.alphaRename, h]
 
 theorem freeVariables_atom (symbol : Symbol) :
@@ -156,7 +161,8 @@ theorem array_map_eq
     (values : Array α)
     (f g : α → β)
     (h : ∀ value, value ∈ values → f value = g value)
-    : values.map f = values.map g := by
+    : values.map f = values.map g
+    := by
   apply Array.ext
   · simp
   · intro index hLeft hRight
@@ -218,7 +224,8 @@ theorem appendUnique_mem_left
     (values : Array String)
     (name value : String)
     (h : name ∈ values)
-    : name ∈ TypeExpr.Internal.appendUnique values value := by
+    : name ∈ TypeExpr.Internal.appendUnique values value
+    := by
   by_cases hValue : value ∈ values
   · simp [TypeExpr.Internal.appendUnique, hValue, h]
   · simp [TypeExpr.Internal.appendUnique, hValue, h]
@@ -260,7 +267,8 @@ theorem array_fold_appendUnique_mem_left
     (values initial : Array String)
     (name : String)
     (h : name ∈ initial)
-    : name ∈ values.foldl TypeExpr.Internal.appendUnique initial := by
+    : name ∈ values.foldl TypeExpr.Internal.appendUnique initial
+    := by
   rw [← Array.foldl_toList]
   exact fold_appendUnique_mem_left values.toList initial name h
 
@@ -269,7 +277,8 @@ theorem array_fold_appendUnique_mem_right
     (values initial : Array String)
     (name : String)
     (h : name ∈ values)
-    : name ∈ values.foldl TypeExpr.Internal.appendUnique initial := by
+    : name ∈ values.foldl TypeExpr.Internal.appendUnique initial
+    := by
   rw [← Array.foldl_toList]
   exact fold_appendUnique_mem_right values.toList initial name (Array.mem_def.mp h)
 
@@ -536,7 +545,8 @@ theorem array_any_binder_name
     (variables : Array TypeBinder)
     (binder : TypeBinder)
     (hBinder : binder ∈ variables)
-    : variables.any (fun value => value.name == binder.name) = true := by
+    : variables.any (fun value => value.name == binder.name) = true
+    := by
   rw [Array.any_eq_true]
   rcases Array.getElem_of_mem hBinder with ⟨index, hIndex, hEq⟩
   exact ⟨index, hIndex, by simpa [hEq]⟩
@@ -573,7 +583,8 @@ private
 theorem isTypeVariable_append
     (base suffix : String)
     (hBase : TypeExpr.Internal.isTypeVariable base = true)
-    : TypeExpr.Internal.isTypeVariable (base ++ suffix) = true := by
+    : TypeExpr.Internal.isTypeVariable (base ++ suffix) = true
+    := by
   unfold TypeExpr.Internal.isTypeVariable at hBase ⊢
   rw [String.toList_append]
   cases hBaseList : base.toList with
@@ -587,7 +598,8 @@ theorem freshCandidate_isTypeVariable
     (base : String)
     (index : Nat)
     (hBase : TypeExpr.Internal.isTypeVariable base = true)
-    : TypeExpr.Internal.isTypeVariable (TypeExpr.Internal.freshCandidate base index) = true := by
+    : TypeExpr.Internal.isTypeVariable (TypeExpr.Internal.freshCandidate base index) = true
+    := by
   cases index with
   | zero => simpa [TypeExpr.Internal.freshCandidate] using hBase
   | succ index =>
@@ -605,7 +617,8 @@ theorem freshFallback_isTypeVariable
     (base : String)
     (used : Array String)
     (hBase : TypeExpr.Internal.isTypeVariable base = true)
-    : TypeExpr.Internal.isTypeVariable (TypeExpr.Internal.freshFallback base used) = true := by
+    : TypeExpr.Internal.isTypeVariable (TypeExpr.Internal.freshFallback base used) = true
+    := by
   simpa [TypeExpr.Internal.freshFallback, String.append_assoc] using
     isTypeVariable_append base
       ("_" ++ String.ofList (List.replicate (TypeExpr.Internal.maxLength used + 1) '_')) hBase
@@ -627,7 +640,8 @@ theorem freshName_isTypeVariable
     (base : String)
     (used : Array String)
     (hBase : TypeExpr.Internal.isTypeVariable base = true)
-    : TypeExpr.Internal.isTypeVariable (TypeExpr.Internal.freshName base used) = true := by
+    : TypeExpr.Internal.isTypeVariable (TypeExpr.Internal.freshName base used) = true
+    := by
   exact freshNameLoop_isTypeVariable base used 0 (used.size + 1) hBase
 
 private theorem boundIndex_tail_old (old fresh : String) :
@@ -951,14 +965,16 @@ private theorem alphaNormalize_alphaRename (old new : String)
 
 def typeAlphaEquivalent
     (left right : TypeExpr)
-    : Prop :=
+    : Prop
+    :=
   TypeExpr.Internal.alphaNormalize [] left = TypeExpr.Internal.alphaNormalize [] right
 
 theorem alphaRename_alphaEquivalent
     (old new : String)
     (type : TypeExpr)
     (hNew : TypeExpr.Internal.isTypeVariable new = true)
-    : typeAlphaEquivalent (type.alphaRename old new) type :=
+    : typeAlphaEquivalent (type.alphaRename old new) type
+    :=
   alphaNormalize_alphaRename old new hNew [] type
 
 theorem alphaRename_freshness (old new : String) (variables : Array TypeBinder)

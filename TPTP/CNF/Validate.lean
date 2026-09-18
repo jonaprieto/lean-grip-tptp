@@ -18,7 +18,8 @@ namespace TPTP.CNF
 
 def validate
     (clause : Clause)
-    : Except FOF.ValidationError Unit :=
+    : Except FOF.ValidationError Unit
+    :=
   do
     let _ ← clause.literals.toList.mapM fun literal =>
       match literal with

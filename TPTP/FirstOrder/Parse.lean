@@ -42,13 +42,15 @@ private
 def visible
     (quote : UInt8)
     (byte : UInt8)
-    : Bool :=
+    : Bool
+    :=
   32 ≤ byte && byte ≤ 126 && byte != quote && byte != Ascii.backslash
 
 private
 def escaped
     (quote : UInt8)
-    : GParser conditional String :=
+    : GParser conditional String
+    :=
   GParser.map (fun byte => String.ofList ['\\', Char.ofNat byte.toNat])
     (GParser.byte Ascii.backslash *> GParser.satisfy (fun byte => byte == quote ||
       byte == Ascii.backslash))
@@ -56,7 +58,8 @@ def escaped
 private
 def quotedBody
     (quote : UInt8)
-    : GParser flexible String :=
+    : GParser flexible String
+    :=
   String.join <$> GParser.many (GParser.alt
     (GParser.capture (GParser.takeWhile1 (visible quote)))
     (escaped quote))
@@ -64,7 +67,8 @@ def quotedBody
 private
 def quotedBodyNonempty
     (quote : UInt8)
-    : GParser conditional String :=
+    : GParser conditional String
+    :=
   String.join <$> GParser.many1 (GParser.alt
     (GParser.capture (GParser.takeWhile1 (visible quote)))
     (escaped quote))
@@ -172,7 +176,8 @@ def variableParser : P String := upperWord
 
 def argumentList
     (term : P Term)
-    : P (Array Term) :=
+    : P (Array Term)
+    :=
   List.toArray <$> (GParser.ch '(' *> trivia *>
     GParser.sepBy1 term (GParser.ch ',' *> trivia) <* GParser.ch ')' <* trivia)
 

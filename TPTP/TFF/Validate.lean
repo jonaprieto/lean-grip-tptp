@@ -74,7 +74,8 @@ private
 def lookup
     (signature : Signature)
     (name : String)
-    : Option Declaration :=
+    : Option Declaration
+    :=
   signature.declarations.find? (fun declaration => declaration.symbol.raw == name)
 
 private
@@ -101,7 +102,8 @@ def canonicalType
 private
 def canonicalSignature
     (signature : Signature)
-    : Signature :=
+    : Signature
+    :=
   { declarations := signature.declarations.map fun declaration =>
       { declaration with type := canonicalType declaration.type } }
 
@@ -109,7 +111,8 @@ private
 def add
     (signature : Signature)
     (declaration : Declaration)
-    : Except ValidationError Signature :=
+    : Except ValidationError Signature
+    :=
   let declaration := { declaration with type := canonicalType declaration.type }
   match lookup signature declaration.symbol.raw with
   | none => .ok { declarations := signature.declarations.push declaration }
@@ -122,31 +125,36 @@ def add
 private
 def atom
     (name : String)
-    : TypeExpr :=
+    : TypeExpr
+    :=
   .atom { raw := name }
 
 private
 def isBuiltinType
     (name : String)
-    : Bool :=
+    : Bool
+    :=
   ["$i", "$o", "$iType", "$oType", "$tType", "$int", "$rat", "$real"].contains name
 
 private
 def isBoolean
     (type : TypeExpr)
-    : Bool :=
+    : Bool
+    :=
   canonicalType type == atom "$o"
 
 private
 def isKind
     (type : TypeExpr)
-    : Bool :=
+    : Bool
+    :=
   canonicalType type == atom "$tType"
 
 private
 def isNumeric
     (type : TypeExpr)
-    : Bool :=
+    : Bool
+    :=
   ["$int", "$rat", "$real"].contains (match canonicalType type with
     | .atom symbol => symbol.raw
     | _ => "")
@@ -155,14 +163,16 @@ private
 def checkArity
     (name : String)
     (expected actual : Nat)
-    : Except ValidationError Unit :=
+    : Except ValidationError Unit
+    :=
   if expected == actual then .ok () else .error (.invalidArity name expected actual)
 
 private
 def variablesLookup
     (variables : List (String × TypeExpr))
     (name : String)
-    : Option TypeExpr :=
+    : Option TypeExpr
+    :=
   match variables with
   | [] => none
   | (bound, type) :: rest => if bound == name then some type else variablesLookup rest name
@@ -170,7 +180,8 @@ def variablesLookup
 private
 def sameTypes
     (types : Array TypeExpr)
-    : Option TypeExpr :=
+    : Option TypeExpr
+    :=
   match types[0]? with
   | none => none
   | some first => if types.all (· == first) then some first else none
@@ -179,7 +190,8 @@ private
 def checkSame
     (context : String)
     (types : Array TypeExpr)
-    : Except ValidationError TypeExpr :=
+    : Except ValidationError TypeExpr
+    :=
   let types := types.map canonicalType
   match sameTypes types with
   | some type => .ok type
@@ -207,7 +219,8 @@ def checkArguments
 private
 def typeConstructorArity
     (declaration : Declaration)
-    : Option Nat :=
+    : Option Nat
+    :=
   match declaration.type with
   | .mapping arguments result =>
       if isKind result && arguments.all isKind then some arguments.size else none
@@ -216,7 +229,8 @@ def typeConstructorArity
 private
 def typeVariableNames
     (variables : Array TypeBinder)
-    : List String :=
+    : List String
+    :=
   variables.toList.map TypeBinder.name
 
 private
@@ -233,7 +247,8 @@ def typeKnown
     (signature : Signature)
     (typeVariables : List String)
     (type : TypeExpr)
-    : Except ValidationError Unit :=
+    : Except ValidationError Unit
+    :=
   match canonicalType type with
   | .atom symbol =>
       if typeVariables.contains symbol.raw then
@@ -271,7 +286,8 @@ def typeKnown
 private
 def validDeclarationName
     (symbol : Symbol)
-    : Bool :=
+    : Bool
+    :=
   match symbol.raw.toList with
   | [] => false
   | '"' :: _ => false
@@ -351,7 +367,8 @@ private def definedTerms : List String :=
 private
 def isNumberOrDistinct
     (name : String)
-    : Bool :=
+    : Bool
+    :=
   match name.toList with
   | '"' :: _ => true
   | '+' :: _ | '-' :: _ => true
@@ -361,7 +378,8 @@ def isNumberOrDistinct
 private
 def literalType
     (name : String)
-    : TypeExpr :=
+    : TypeExpr
+    :=
   if name.startsWith "\"" then atom "$i"
   else if name.contains "/" then atom "$rat"
   else if name.contains "." || name.contains "e" || name.contains "E" then atom "$real"
@@ -371,7 +389,8 @@ private
 def defaultType
     (arity : Nat)
     (result : TypeExpr)
-    : TypeExpr :=
+    : TypeExpr
+    :=
   if arity == 0 then result else .mapping (Array.replicate arity (atom "$i")) result
 
 -- partiality: term type inference traverses Array-backed first-order terms.
@@ -394,7 +413,8 @@ def instantiate
     (variables : Array TypeBinder)
     (body : TypeExpr)
     (arguments : Array TypeExpr)
-    : TypeExpr :=
+    : TypeExpr
+    :=
   let substitution := (variables.toList.map TypeBinder.name).zip arguments.toList |>.toArray
   body.substitute substitution
 
@@ -403,7 +423,8 @@ def applyMonotype
     (name : String)
     (type : TypeExpr)
     (arguments : Array TypeExpr)
-    : Except ValidationError TypeExpr :=
+    : Except ValidationError TypeExpr
+    :=
   match type with
   | .mapping expected result => do
       let _ ← checkArguments name expected arguments
@@ -687,7 +708,8 @@ def validateDeclaration
 def validateFormula
     (signature : Signature)
     (formula : Formula)
-    : Except ValidationError Signature :=
+    : Except ValidationError Signature
+    :=
   checkFormula (canonicalSignature signature) [] [] formula
 
 /-- Validate one parsed typed body and return the updated signature. -/
@@ -711,7 +733,8 @@ def validateBodies
 /-- Validate a sequence of parsed typed bodies in source order. -/
 def validateDocument
     (bodies : Array Body)
-    : Except ValidationError Signature :=
+    : Except ValidationError Signature
+    :=
   validateBodies {} bodies.toList
 
 end TPTP.TFF

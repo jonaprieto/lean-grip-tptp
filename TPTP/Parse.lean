@@ -25,7 +25,8 @@ def parseUtf8
     {α : Type}
     (parser : GParser g α)
     (source : ByteArray)
-    : Except Grip.ParseError α :=
+    : Except Grip.ParseError α
+    :=
   if (String.fromUTF8? source).isNone then
     .error (mkParseError source ⟨0, ["valid UTF-8"]⟩)
   else parser.parse source
@@ -33,19 +34,22 @@ def parseUtf8
 private
 def isNameByte
     (byte : UInt8)
-    : Bool :=
+    : Bool
+    :=
   Ascii.isAlphaNum byte || byte == 95 || byte == 36
 
 private
 def isRoleByte
     (byte : UInt8)
-    : Bool :=
+    : Bool
+    :=
   isNameByte byte || byte == Ascii.code '-'
 
 private
 def isDelimiter
     (byte : UInt8)
-    : Bool :=
+    : Bool
+    :=
   byte == 40 || byte == 41 || byte == 91 || byte == 93 || byte == 123 || byte == 125 ||
     byte == 34 || byte == 39 || byte == Ascii.code '%' || byte == Ascii.slash
 
@@ -74,14 +78,16 @@ private
 def quotedPiece
     (quote : UInt8)
     (body : GParser flexible String)
-    : GParser conditional String :=
+    : GParser conditional String
+    :=
   GParser.capture (GParser.byte quote *> body <* GParser.byte quote)
 
 private
 def quotedPieceNonempty
     (quote : UInt8)
     (body : GParser conditional String)
-    : GParser conditional String :=
+    : GParser conditional String
+    :=
   GParser.capture (GParser.byte quote *> body <* GParser.byte quote)
 
 private def escapedChunk : GParser conditional String :=
@@ -90,7 +96,8 @@ private def escapedChunk : GParser conditional String :=
 private
 def quotedBody
     (quote : UInt8)
-    : GParser flexible String :=
+    : GParser flexible String
+    :=
   String.join <$> GParser.many (GParser.alt
     (GParser.capture (GParser.takeWhile1 (fun byte => byte != quote && byte != Ascii.backslash)))
     escapedChunk)
@@ -98,7 +105,8 @@ def quotedBody
 private
 def quotedBodyNonempty
     (quote : UInt8)
-    : GParser conditional String :=
+    : GParser conditional String
+    :=
   String.join <$> GParser.many1 (GParser.alt
     (GParser.capture (GParser.takeWhile1 (fun byte => byte != quote && byte != Ascii.backslash)))
     escapedChunk)
@@ -119,7 +127,8 @@ private
 def rawGroup
     (opener closer : Char)
     (body : GParser conditional String)
-    : GParser conditional String :=
+    : GParser conditional String
+    :=
   GParser.map (fun value => String.ofList [opener] ++ value ++ String.ofList [closer])
     (GParser.ch opener *> body <* GParser.ch closer)
 
@@ -139,7 +148,8 @@ private def rawSlash : GParser conditional String :=
 private
 def rawPiece
     (body : GParser conditional String)
-    : GParser conditional String :=
+    : GParser conditional String
+    :=
   GParser.dispatch fun byte =>
     if byte == 40 then rawGroup '(' ')' body
     else if byte == 91 then rawGroup '[' ']' body
@@ -160,7 +170,8 @@ private inductive Comment where
 private
 def splitAnnotation
     (body : String)
-    : String × Option String :=
+    : String × Option String
+    :=
   let rec go (input : List Char) (round square curly : Nat) (quote : Option Char)
       (escaped : Bool) (comment : Option Comment) (formula : List Char) :
       String × Option String :=
@@ -282,25 +293,29 @@ private def documentParser : Grip.Parser Document :=
 /-- Parse a complete TPTP/TSTP document from bytes. -/
 def parse
     (source : ByteArray)
-    : Except Grip.ParseError Document :=
+    : Except Grip.ParseError Document
+    :=
   parseUtf8 documentParser source
 
 /-- Parse a complete TPTP/TSTP document from UTF-8 text. -/
 def parseString
     (source : String)
-    : Except Grip.ParseError Document :=
+    : Except Grip.ParseError Document
+    :=
   parse source.toUTF8
 
 /-- Parse exactly one TPTP/TSTP statement. -/
 def parseStatement
     (source : ByteArray)
-    : Except Grip.ParseError Statement :=
+    : Except Grip.ParseError Statement
+    :=
   parseUtf8 (trivia *> statementParser <* trivia <* GParser.eof) source
 
 /-- Parse exactly one TPTP/TSTP statement from UTF-8 text. -/
 def parseStatementString
     (source : String)
-    : Except Grip.ParseError Statement :=
+    : Except Grip.ParseError Statement
+    :=
   parseStatement source.toUTF8
 
 namespace Formula
@@ -311,7 +326,8 @@ private def token : GParser conditional String :=
 private
 def argumentList
     (term : GParser conditional Term)
-    : GParser conditional (Array Term) :=
+    : GParser conditional (Array Term)
+    :=
   GParser.ch '(' *> trivia *>
     ((GParser.pure #[] <* GParser.ch ')') <|>
       (List.toArray <$> GParser.sepBy1 term (trivia *> GParser.ch ',' <* trivia)
@@ -391,20 +407,23 @@ private def formulaParser : GParser conditional Expr :=
 /-- Parse the supported first-order formula fragment from bytes. -/
 def parseFormula
     (source : ByteArray)
-    : Except Grip.ParseError Expr :=
+    : Except Grip.ParseError Expr
+    :=
   parseUtf8 (trivia *> formulaParser <* trivia <* GParser.eof) source
 
 /-- Parse the supported first-order formula fragment from UTF-8 text. -/
 def parseFormulaString
     (source : String)
-    : Except Grip.ParseError Expr :=
+    : Except Grip.ParseError Expr
+    :=
   parseFormula source.toUTF8
 
 end Formula
 
 def Statement.parseFormula
     (statement : Statement)
-    : Except Grip.ParseError Formula.Expr :=
+    : Except Grip.ParseError Formula.Expr
+    :=
   Formula.parseFormulaString statement.formula
 
 end TPTP

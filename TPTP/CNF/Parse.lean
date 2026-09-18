@@ -44,7 +44,8 @@ private def separator : P Unit :=
 private
 def normalize
     (clause : Clause)
-    : Clause :=
+    : Clause
+    :=
   match clause.literals.toList with
   | [Literal.positive (.predicate symbol arguments)] =>
       if symbol.raw == "$false" && arguments.isEmpty then
@@ -65,18 +66,21 @@ private def clauseParser : P Clause :=
 /-- Parse a complete CNF clause from bytes. -/
 def parseFormula
     (source : ByteArray)
-    : Except Grip.ParseError Clause :=
+    : Except Grip.ParseError Clause
+    :=
   (trivia *> clauseParser <* trivia <* GParser.eof).parse source
 
 /-- Parse a complete CNF clause from UTF-8 text. -/
 def parseFormulaString
     (source : String)
-    : Except Grip.ParseError Clause :=
+    : Except Grip.ParseError Clause
+    :=
   parseFormula source.toUTF8
 
 def parseStatementFormula
     (statement : TPTP.Statement)
-    : Except TPTP.FormulaError Clause :=
+    : Except TPTP.FormulaError Clause
+    :=
   if statement.kind != .cnf then
     .error (.wrongKind .cnf statement.kind)
   else

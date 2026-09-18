@@ -10,13 +10,15 @@ namespace TPTP
 
 def Statement.render
     (statement : Statement)
-    : String :=
+    : String
+    :=
   let annotation := statement.annotations.map (fun value => s!", {value}") |>.getD ""
   s!"{statement.kind}({statement.name}, {statement.role}, {statement.formula}{annotation})."
 
 def Include.render
     (value : Include)
-    : String :=
+    : String
+    :=
   let selection := value.selection.map (fun item => s!", {item}") |>.getD ""
   s!"include({value.path}{selection})."
 
@@ -28,7 +30,8 @@ def Item.render
 
 def Document.render
     (document : Document)
-    : String :=
+    : String
+    :=
   String.intercalate "\n" (document.items.toList.map Item.render)
 
 end TPTP
