@@ -20,10 +20,14 @@ namespace TPTP.CNF
 open Grip GParser
 open TPTP.FirstOrder.Parser
 
-private def positiveLiteral : P Literal :=
+private
+def positiveLiteral
+    : P Literal :=
   Literal.positive <$> FirstOrder.Parser.atom
 
-private def parenthesizedAtom : P FirstOrder.Atom :=
+private
+def parenthesizedAtom
+    : P FirstOrder.Atom :=
   GParser.ch '(' *> trivia *> FirstOrder.Parser.atom <* GParser.ch ')' <* trivia
 
 private def negativeLiteral : P Literal := gdo
@@ -33,15 +37,22 @@ private def negativeLiteral : P Literal := gdo
   return .negative value
   grade_by by decide
 
-private def literal : P Literal :=
+private
+def literal
+    : P Literal :=
   GParser.dispatch fun byte =>
     if byte == Ascii.code '~' then negativeLiteral
     else positiveLiteral
 
-private def separator : P Unit :=
+private
+def separator
+    : P Unit :=
   (fun _ => ()) <$> (GParser.ch '|' <* trivia)
 
-private def normalize (clause : Clause) : Clause :=
+private
+def normalize
+    (clause : Clause)
+    : Clause :=
   match clause.literals.toList with
   | [Literal.positive (.predicate symbol arguments)] =>
       if symbol.raw == "$false" && arguments.isEmpty then
@@ -50,7 +61,9 @@ private def normalize (clause : Clause) : Clause :=
         clause
   | _ => clause
 
-private def clauseParser : P Clause :=
+private
+def clauseParser
+    : P Clause :=
   GParser.fix fun recursive =>
     let parenthesized : P Clause :=
       GParser.ch '(' *> trivia *> recursive <* GParser.ch ')' <* trivia
@@ -60,14 +73,20 @@ private def clauseParser : P Clause :=
     GParser.chooseG parenthesized [disjunction]
 
 /-- Parse a complete CNF clause from bytes. -/
-def parseFormula (source : ByteArray) : Except Grip.ParseError Clause :=
+def parseFormula
+    (source : ByteArray)
+    : Except Grip.ParseError Clause :=
   (trivia *> clauseParser <* trivia <* GParser.eof).parse source
 
 /-- Parse a complete CNF clause from UTF-8 text. -/
-def parseFormulaString (source : String) : Except Grip.ParseError Clause :=
+def parseFormulaString
+    (source : String)
+    : Except Grip.ParseError Clause :=
   parseFormula source.toUTF8
 
-def parseStatementFormula (statement : TPTP.Statement) : Except TPTP.FormulaError Clause :=
+def parseStatementFormula
+    (statement : TPTP.Statement)
+    : Except TPTP.FormulaError Clause :=
   if statement.kind != .cnf then
     .error (.wrongKind .cnf statement.kind)
   else

@@ -8,7 +8,9 @@ import TPTP
 
 open TPTP
 
-private def source : String :=
+private
+def source
+    : String :=
   "include('Axioms/foo.p').\n" ++
     "fof(goal, conjecture, ! [X] : (p(X) => q(X)),\n" ++
     "  inference(resolution, [status(thm)], [foo])).\n" ++

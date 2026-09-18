@@ -12,7 +12,9 @@ import TPTP.FirstOrder
 
 namespace TPTP.FirstOrder
 
-def Term.render : Term → String
+def Term.render
+    : Term →
+      String
   | .variable name => name
   | .constant symbol => symbol.render
   | .function symbol arguments =>
@@ -32,7 +34,9 @@ decreasing_by
 instance : ToString Term where
   toString := Term.render
 
-def Atom.render : Atom → String
+def Atom.render
+    : Atom →
+      String
   | .predicate symbol arguments =>
       if arguments.isEmpty then
         symbol.render

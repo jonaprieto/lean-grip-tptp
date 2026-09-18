@@ -19,33 +19,55 @@ namespace TPTP
 
 open Grip GParser
 
-private def parseUtf8 {g : Grade} {α : Type} (parser : GParser g α)
-    (source : ByteArray) : Except Grip.ParseError α :=
+private
+def parseUtf8
+    {g : Grade}
+    {α : Type}
+    (parser : GParser g α)
+    (source : ByteArray)
+    : Except Grip.ParseError α :=
   if (String.fromUTF8? source).isNone then
     .error (mkParseError source ⟨0, ["valid UTF-8"]⟩)
   else parser.parse source
 
-private def isNameByte (byte : UInt8) : Bool :=
+private
+def isNameByte
+    (byte : UInt8)
+    : Bool :=
   Ascii.isAlphaNum byte || byte == 95 || byte == 36
 
-private def isRoleByte (byte : UInt8) : Bool :=
+private
+def isRoleByte
+    (byte : UInt8)
+    : Bool :=
   isNameByte byte || byte == Ascii.code '-'
 
-private def isDelimiter (byte : UInt8) : Bool :=
+private
+def isDelimiter
+    (byte : UInt8)
+    : Bool :=
   byte == 40 || byte == 41 || byte == 91 || byte == 93 || byte == 123 || byte == 125 ||
     byte == 34 || byte == 39 || byte == Ascii.code '%' || byte == Ascii.slash
 
-private def whitespace : GParser conditional Unit :=
+private
+def whitespace
+    : GParser conditional Unit :=
   (fun _ => ()) <$> GParser.satisfy Ascii.isWs
 
-private def lineComment : GParser conditional Unit :=
+private
+def lineComment
+    : GParser conditional Unit :=
   (fun _ => ()) <$> (GParser.byte (Ascii.code '%') *> GParser.takeWhile (· != Ascii.lf))
 
-private def blockComment : GParser conditional Unit :=
+private
+def blockComment
+    : GParser conditional Unit :=
   (fun _ => ()) <$> (GParser.string "/*" *>
     GParser.manyTill (GParser.satisfy (fun _ => true)) (GParser.string "*/"))
 
-private def triviaUnit : GParser conditional Unit :=
+private
+def triviaUnit
+    : GParser conditional Unit :=
   GParser.dispatch fun byte =>
     if byte == Ascii.code '%' then lineComment
     else if byte == Ascii.slash then blockComment
@@ -53,61 +75,97 @@ private def triviaUnit : GParser conditional Unit :=
 
 private def trivia : GParser flexible Nat := GParser.skipMany triviaUnit
 
-private def escapedByte : GParser conditional UInt8 :=
+private
+def escapedByte
+    : GParser conditional UInt8 :=
   GParser.byte Ascii.backslash *> GParser.satisfy (fun _ => true)
 
-private def quotedPiece (quote : UInt8) (body : GParser flexible String) :
-    GParser conditional String :=
+private
+def quotedPiece
+    (quote : UInt8)
+    (body : GParser flexible String)
+    : GParser conditional String :=
   GParser.capture (GParser.byte quote *> body <* GParser.byte quote)
 
-private def quotedPieceNonempty (quote : UInt8) (body : GParser conditional String) :
-    GParser conditional String :=
+private
+def quotedPieceNonempty
+    (quote : UInt8)
+    (body : GParser conditional String)
+    : GParser conditional String :=
   GParser.capture (GParser.byte quote *> body <* GParser.byte quote)
 
-private def escapedChunk : GParser conditional String :=
+private
+def escapedChunk
+    : GParser conditional String :=
   GParser.map (fun byte => String.ofList ['\\', Char.ofNat byte.toNat]) escapedByte
 
-private def quotedBody (quote : UInt8) : GParser flexible String :=
+private
+def quotedBody
+    (quote : UInt8)
+    : GParser flexible String :=
   String.join <$> GParser.many (GParser.alt
     (GParser.capture (GParser.takeWhile1 (fun byte => byte != quote && byte != Ascii.backslash)))
     escapedChunk)
 
-private def quotedBodyNonempty (quote : UInt8) : GParser conditional String :=
+private
+def quotedBodyNonempty
+    (quote : UInt8)
+    : GParser conditional String :=
   String.join <$> GParser.many1 (GParser.alt
     (GParser.capture (GParser.takeWhile1 (fun byte => byte != quote && byte != Ascii.backslash)))
     escapedChunk)
 
-private def quotedName : GParser conditional Name :=
+private
+def quotedName
+    : GParser conditional Name :=
   Name.quoted <$> quotedPieceNonempty Ascii.apostrophe (quotedBodyNonempty Ascii.apostrophe)
 
-private def backquotedName : GParser conditional Name :=
+private
+def backquotedName
+    : GParser conditional Name :=
   Name.quoted <$> GParser.capture (GParser.byte 96 *> GParser.satisfy Ascii.isUpper *>
     GParser.takeWhile (fun byte => Ascii.isAlphaNum byte || byte == 95))
 
-private def bareName : GParser conditional Name :=
+private
+def bareName
+    : GParser conditional Name :=
   Name.bare <$> GParser.capture (GParser.takeWhile1 isNameByte)
 
 private def name : GParser conditional Name := GParser.chooseG quotedName [backquotedName, bareName]
 
-private def rawGroup (opener closer : Char) (body : GParser conditional String) :
-    GParser conditional String :=
+private
+def rawGroup
+    (opener closer : Char)
+    (body : GParser conditional String)
+    : GParser conditional String :=
   GParser.map (fun value => String.ofList [opener] ++ value ++ String.ofList [closer])
     (GParser.ch opener *> body <* GParser.ch closer)
 
-private def rawLineComment : GParser conditional String :=
+private
+def rawLineComment
+    : GParser conditional String :=
   GParser.capture (GParser.byte (Ascii.code '%') *> GParser.takeWhile (· != Ascii.lf))
 
-private def rawBlockComment : GParser conditional String :=
+private
+def rawBlockComment
+    : GParser conditional String :=
   GParser.capture (GParser.string "/*" *>
     GParser.manyTill (GParser.satisfy (fun _ => true)) (GParser.string "*/"))
 
-private def rawText : GParser conditional String :=
+private
+def rawText
+    : GParser conditional String :=
   GParser.capture (GParser.takeWhile1 (fun value => !isDelimiter value))
 
-private def rawSlash : GParser conditional String :=
+private
+def rawSlash
+    : GParser conditional String :=
   GParser.capture (GParser.byte Ascii.slash)
 
-private def rawPiece (body : GParser conditional String) : GParser conditional String :=
+private
+def rawPiece
+    (body : GParser conditional String)
+    : GParser conditional String :=
   GParser.dispatch fun byte =>
     if byte == 40 then rawGroup '(' ')' body
     else if byte == 91 then rawGroup '[' ']' body
@@ -118,14 +176,19 @@ private def rawPiece (body : GParser conditional String) : GParser conditional S
     else if byte == Ascii.slash then GParser.alt rawBlockComment rawSlash
     else rawText
 
-private def rawBody : GParser conditional String :=
+private
+def rawBody
+    : GParser conditional String :=
   GParser.fix fun body => String.join <$> GParser.many1 (rawPiece body)
 
 private inductive Comment where
   | line
   | block
 
-private def splitAnnotation (body : String) : String × Option String :=
+private
+def splitAnnotation
+    (body : String)
+    : String × Option String :=
   let rec go (input : List Char) (round square curly : Nat) (quote : Option Char)
       (escaped : Bool) (comment : Option Comment) (formula : List Char) :
       String × Option String :=
@@ -189,10 +252,14 @@ private def splitAnnotation (body : String) : String × Option String :=
   decreasing_by all_goals simp_all <;> omega
   go body.toList 0 0 0 none false none []
 
-private def kind : GParser conditional Kind :=
+private
+def kind
+    : GParser conditional Kind :=
   Kind.ofString <$> GParser.capture (GParser.takeWhile1 isNameByte)
 
-private def role : GParser conditional Role :=
+private
+def role
+    : GParser conditional Role :=
   Role.ofString <$> GParser.capture (GParser.takeWhile1 isRoleByte)
 
 private def statementParser : GParser conditional Statement := gdo
@@ -235,43 +302,62 @@ private def includeParser : GParser conditional Include := gdo
   return { path, selection := selection.map (·.trimAscii.toString) }
   grade_by by decide
 
-private def itemParser : GParser conditional Item :=
+private
+def itemParser
+    : GParser conditional Item :=
   (Item.include <$> includeParser) <|> (Item.statement <$> statementParser)
 
-private def documentParser : Grip.Parser Document :=
+private
+def documentParser
+    : Grip.Parser Document :=
   -- Replay a failed item to retain the diagnostic discarded by `many`.
   let endOfDocument := GParser.eof <|> (itemParser *> GParser.fail)
   let items := trivia *> GParser.many (itemParser <* trivia) <* endOfDocument
   GParser.map (fun values => { items := values.toArray }) (GParser.weakenFallible items)
 
 /-- Parse a complete TPTP/TSTP document from bytes. -/
-def parse (source : ByteArray) : Except Grip.ParseError Document :=
+def parse
+    (source : ByteArray)
+    : Except Grip.ParseError Document :=
   parseUtf8 documentParser source
 
 /-- Parse a complete TPTP/TSTP document from UTF-8 text. -/
-def parseString (source : String) : Except Grip.ParseError Document :=
+def parseString
+    (source : String)
+    : Except Grip.ParseError Document :=
   parse source.toUTF8
 
 /-- Parse exactly one TPTP/TSTP statement. -/
-def parseStatement (source : ByteArray) : Except Grip.ParseError Statement :=
+def parseStatement
+    (source : ByteArray)
+    : Except Grip.ParseError Statement :=
   parseUtf8 (trivia *> statementParser <* trivia <* GParser.eof) source
 
 /-- Parse exactly one TPTP/TSTP statement from UTF-8 text. -/
-def parseStatementString (source : String) : Except Grip.ParseError Statement :=
+def parseStatementString
+    (source : String)
+    : Except Grip.ParseError Statement :=
   parseStatement source.toUTF8
 
 namespace Formula
 
-private def token : GParser conditional String :=
+private
+def token
+    : GParser conditional String :=
   GParser.capture (GParser.takeWhile1 isNameByte) <* trivia
 
-private def argumentList (term : GParser conditional Term) : GParser conditional (Array Term) :=
+private
+def argumentList
+    (term : GParser conditional Term)
+    : GParser conditional (Array Term) :=
   GParser.ch '(' *> trivia *>
     ((GParser.pure #[] <* GParser.ch ')') <|>
       (List.toArray <$> GParser.sepBy1 term (trivia *> GParser.ch ',' <* trivia)
         <* trivia <* GParser.ch ')'))
 
-private def termParser : GParser conditional Term :=
+private
+def termParser
+    : GParser conditional Term :=
   GParser.fix fun (term : GParser conditional Term) => gdo
     let name ← token
     let arguments ← GParser.optional (argumentList term)
@@ -299,12 +385,16 @@ private def atomParser : GParser conditional Expr := gdo
   return value
   grade_by by decide
 
-private def variableList : GParser conditional (Array String) :=
+private
+def variableList
+    : GParser conditional (Array String) :=
   GParser.ch '[' *> trivia *>
     (List.toArray <$> GParser.sepBy1 token (trivia *> GParser.ch ',' <* trivia)
       <* trivia <* GParser.ch ']')
 
-private def formulaParser : GParser conditional Expr :=
+private
+def formulaParser
+    : GParser conditional Expr :=
   GParser.fix fun (formula : GParser conditional Expr) =>
     let unary : GParser conditional Expr :=
       GParser.fix fun unary =>
@@ -343,16 +433,22 @@ private def formulaParser : GParser conditional Expr :=
       grade_by by decide
 
 /-- Parse the supported first-order formula fragment from bytes. -/
-def parseFormula (source : ByteArray) : Except Grip.ParseError Expr :=
+def parseFormula
+    (source : ByteArray)
+    : Except Grip.ParseError Expr :=
   parseUtf8 (trivia *> formulaParser <* trivia <* GParser.eof) source
 
 /-- Parse the supported first-order formula fragment from UTF-8 text. -/
-def parseFormulaString (source : String) : Except Grip.ParseError Expr :=
+def parseFormulaString
+    (source : String)
+    : Except Grip.ParseError Expr :=
   parseFormula source.toUTF8
 
 end Formula
 
-def Statement.parseFormula (statement : Statement) : Except Grip.ParseError Formula.Expr :=
+def Statement.parseFormula
+    (statement : Statement)
+    : Except Grip.ParseError Formula.Expr :=
   Formula.parseFormulaString statement.formula
 
 end TPTP

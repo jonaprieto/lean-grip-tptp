@@ -18,7 +18,9 @@ structure Symbol where
   raw : String
   deriving BEq, Repr
 
-def Symbol.render (symbol : Symbol) : String :=
+def Symbol.render
+    (symbol : Symbol)
+    : String :=
   symbol.raw
 
 instance : ToString Symbol where

@@ -21,11 +21,15 @@ open Grip GParser
 open TPTP.FirstOrder
 open TPTP.FirstOrder.Parser
 
-private def variableList : P (Array String) :=
+private
+def variableList
+    : P (Array String) :=
   List.toArray <$> (GParser.ch '[' *> trivia *>
     GParser.sepBy1 variableParser (GParser.ch ',' *> trivia) <* GParser.ch ']' <* trivia)
 
-private def atomFormula : P Formula :=
+private
+def atomFormula
+    : P Formula :=
   FirstOrder.Parser.atom.map fun value =>
     match value with
     | .predicate symbol arguments =>
@@ -55,7 +59,9 @@ private def negation (unitFormula : P Formula) : P Formula := gdo
   return .not body
   grade_by by decide
 
-private def nonassocOperator : P (Formula → Formula → Formula) :=
+private
+def nonassocOperator
+    : P (Formula → Formula → Formula) :=
   GParser.chooseG
     ((fun _ => Formula.iff) <$> (GParser.string "<=>" <* trivia))
     [ (fun _ => Formula.implies) <$> (GParser.string "=>" <* trivia)
@@ -65,10 +71,14 @@ private def nonassocOperator : P (Formula → Formula → Formula) :=
     , (fun _ => Formula.nand) <$> (GParser.string "~&" <* trivia)
     ]
 
-private def andSeparator : P Unit :=
+private
+def andSeparator
+    : P Unit :=
   (fun _ => ()) <$> (GParser.ch '&' <* trivia)
 
-private def orSeparator : P Unit :=
+private
+def orSeparator
+    : P Unit :=
   (fun _ => ()) <$> (GParser.ch '|' <* trivia)
 
 private def nonassocFormula (unitFormula : P Formula) : P Formula := gdo
@@ -78,15 +88,23 @@ private def nonassocFormula (unitFormula : P Formula) : P Formula := gdo
   return operator left right
   grade_by by decide
 
-private def andFormula (unitFormula : P Formula) : P Formula :=
+private
+def andFormula
+    (unitFormula : P Formula)
+    : P Formula :=
   GParser.map (fun (first, rest) => rest.foldl Formula.and first)
     (GParser.map2 Prod.mk unitFormula (GParser.many1 (andSeparator *> unitFormula)))
 
-private def orFormula (unitFormula : P Formula) : P Formula :=
+private
+def orFormula
+    (unitFormula : P Formula)
+    : P Formula :=
   GParser.map (fun (first, rest) => rest.foldl Formula.or first)
     (GParser.map2 Prod.mk unitFormula (GParser.many1 (orSeparator *> unitFormula)))
 
-private def formulaParser : P Formula :=
+private
+def formulaParser
+    : P Formula :=
   GParser.fix fun formula =>
     let unitary (unitFormula : P Formula) : P Formula :=
       GParser.dispatch fun byte =>
@@ -106,14 +124,20 @@ private def formulaParser : P Formula :=
       [orFormula unitFormula, andFormula unitFormula, unitFormula]
 
 /-- Parse a complete FOF formula from bytes. -/
-def parseFormula (source : ByteArray) : Except Grip.ParseError Formula :=
+def parseFormula
+    (source : ByteArray)
+    : Except Grip.ParseError Formula :=
   (trivia *> formulaParser <* trivia <* GParser.eof).parse source
 
 /-- Parse a complete FOF formula from UTF-8 text. -/
-def parseFormulaString (source : String) : Except Grip.ParseError Formula :=
+def parseFormulaString
+    (source : String)
+    : Except Grip.ParseError Formula :=
   parseFormula source.toUTF8
 
-def parseStatementFormula (statement : TPTP.Statement) : Except TPTP.FormulaError Formula :=
+def parseStatementFormula
+    (statement : TPTP.Statement)
+    : Except TPTP.FormulaError Formula :=
   if statement.kind != .fof then
     .error (.wrongKind .fof statement.kind)
   else

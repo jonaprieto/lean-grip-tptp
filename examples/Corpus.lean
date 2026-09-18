@@ -15,7 +15,11 @@ private def checkFile (path : String) : IO Unit := do
   | .error error =>
       throw (IO.userError s!"{path}:\n{error.pretty source.toUTF8}")
 
-private def formulaError (statement : Statement) (error : FormulaError) : String :=
+private
+def formulaError
+    (statement : Statement)
+    (error : FormulaError)
+    : String :=
   match error with
   | .syntax error => error.pretty statement.formula.toUTF8
   | .wrongKind expected actual => s!"expected {expected}, found {actual}"

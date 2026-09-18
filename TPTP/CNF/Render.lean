@@ -13,11 +13,15 @@ import TPTP.FirstOrder.Render
 
 namespace TPTP.CNF
 
-def Literal.render : Literal → String
+def Literal.render
+    : Literal →
+      String
   | .positive value => value.render
   | .negative value => s!"~({value.render})"
 
-def Clause.render (clause : Clause) : String :=
+def Clause.render
+    (clause : Clause)
+    : String :=
   if clause.literals.isEmpty then
     "$false"
   else

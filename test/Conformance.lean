@@ -16,7 +16,11 @@ not be accepted by the typed parser.
 
 open TPTP
 
-private def isOk {α β : Type} : Except α β → Bool
+private
+def isOk
+    {α β : Type}
+    : Except α β →
+      Bool
   | .ok _ => true
   | .error _ => false
 
