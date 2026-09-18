@@ -49,25 +49,17 @@ def isDelimiter
   byte == 40 || byte == 41 || byte == 91 || byte == 93 || byte == 123 || byte == 125 ||
     byte == 34 || byte == 39 || byte == Ascii.code '%' || byte == Ascii.slash
 
-private
-def whitespace
-    : GParser conditional Unit :=
+private def whitespace : GParser conditional Unit :=
   (fun _ => ()) <$> GParser.satisfy Ascii.isWs
 
-private
-def lineComment
-    : GParser conditional Unit :=
+private def lineComment : GParser conditional Unit :=
   (fun _ => ()) <$> (GParser.byte (Ascii.code '%') *> GParser.takeWhile (· != Ascii.lf))
 
-private
-def blockComment
-    : GParser conditional Unit :=
+private def blockComment : GParser conditional Unit :=
   (fun _ => ()) <$> (GParser.string "/*" *>
     GParser.manyTill (GParser.satisfy (fun _ => true)) (GParser.string "*/"))
 
-private
-def triviaUnit
-    : GParser conditional Unit :=
+private def triviaUnit : GParser conditional Unit :=
   GParser.dispatch fun byte =>
     if byte == Ascii.code '%' then lineComment
     else if byte == Ascii.slash then blockComment
@@ -75,9 +67,7 @@ def triviaUnit
 
 private def trivia : GParser flexible Nat := GParser.skipMany triviaUnit
 
-private
-def escapedByte
-    : GParser conditional UInt8 :=
+private def escapedByte : GParser conditional UInt8 :=
   GParser.byte Ascii.backslash *> GParser.satisfy (fun _ => true)
 
 private
@@ -94,9 +84,7 @@ def quotedPieceNonempty
     : GParser conditional String :=
   GParser.capture (GParser.byte quote *> body <* GParser.byte quote)
 
-private
-def escapedChunk
-    : GParser conditional String :=
+private def escapedChunk : GParser conditional String :=
   GParser.map (fun byte => String.ofList ['\\', Char.ofNat byte.toNat]) escapedByte
 
 private
@@ -115,20 +103,14 @@ def quotedBodyNonempty
     (GParser.capture (GParser.takeWhile1 (fun byte => byte != quote && byte != Ascii.backslash)))
     escapedChunk)
 
-private
-def quotedName
-    : GParser conditional Name :=
+private def quotedName : GParser conditional Name :=
   Name.quoted <$> quotedPieceNonempty Ascii.apostrophe (quotedBodyNonempty Ascii.apostrophe)
 
-private
-def backquotedName
-    : GParser conditional Name :=
+private def backquotedName : GParser conditional Name :=
   Name.quoted <$> GParser.capture (GParser.byte 96 *> GParser.satisfy Ascii.isUpper *>
     GParser.takeWhile (fun byte => Ascii.isAlphaNum byte || byte == 95))
 
-private
-def bareName
-    : GParser conditional Name :=
+private def bareName : GParser conditional Name :=
   Name.bare <$> GParser.capture (GParser.takeWhile1 isNameByte)
 
 private def name : GParser conditional Name := GParser.chooseG quotedName [backquotedName, bareName]
@@ -141,25 +123,17 @@ def rawGroup
   GParser.map (fun value => String.ofList [opener] ++ value ++ String.ofList [closer])
     (GParser.ch opener *> body <* GParser.ch closer)
 
-private
-def rawLineComment
-    : GParser conditional String :=
+private def rawLineComment : GParser conditional String :=
   GParser.capture (GParser.byte (Ascii.code '%') *> GParser.takeWhile (· != Ascii.lf))
 
-private
-def rawBlockComment
-    : GParser conditional String :=
+private def rawBlockComment : GParser conditional String :=
   GParser.capture (GParser.string "/*" *>
     GParser.manyTill (GParser.satisfy (fun _ => true)) (GParser.string "*/"))
 
-private
-def rawText
-    : GParser conditional String :=
+private def rawText : GParser conditional String :=
   GParser.capture (GParser.takeWhile1 (fun value => !isDelimiter value))
 
-private
-def rawSlash
-    : GParser conditional String :=
+private def rawSlash : GParser conditional String :=
   GParser.capture (GParser.byte Ascii.slash)
 
 private
@@ -176,9 +150,7 @@ def rawPiece
     else if byte == Ascii.slash then GParser.alt rawBlockComment rawSlash
     else rawText
 
-private
-def rawBody
-    : GParser conditional String :=
+private def rawBody : GParser conditional String :=
   GParser.fix fun body => String.join <$> GParser.many1 (rawPiece body)
 
 private inductive Comment where
@@ -252,14 +224,10 @@ def splitAnnotation
   decreasing_by all_goals simp_all <;> omega
   go body.toList 0 0 0 none false none []
 
-private
-def kind
-    : GParser conditional Kind :=
+private def kind : GParser conditional Kind :=
   Kind.ofString <$> GParser.capture (GParser.takeWhile1 isNameByte)
 
-private
-def role
-    : GParser conditional Role :=
+private def role : GParser conditional Role :=
   Role.ofString <$> GParser.capture (GParser.takeWhile1 isRoleByte)
 
 private def statementParser : GParser conditional Statement := gdo
@@ -302,14 +270,10 @@ private def includeParser : GParser conditional Include := gdo
   return { path, selection := selection.map (·.trimAscii.toString) }
   grade_by by decide
 
-private
-def itemParser
-    : GParser conditional Item :=
+private def itemParser : GParser conditional Item :=
   (Item.include <$> includeParser) <|> (Item.statement <$> statementParser)
 
-private
-def documentParser
-    : Grip.Parser Document :=
+private def documentParser : Grip.Parser Document :=
   -- Replay a failed item to retain the diagnostic discarded by `many`.
   let endOfDocument := GParser.eof <|> (itemParser *> GParser.fail)
   let items := trivia *> GParser.many (itemParser <* trivia) <* endOfDocument
@@ -341,9 +305,7 @@ def parseStatementString
 
 namespace Formula
 
-private
-def token
-    : GParser conditional String :=
+private def token : GParser conditional String :=
   GParser.capture (GParser.takeWhile1 isNameByte) <* trivia
 
 private
@@ -355,9 +317,7 @@ def argumentList
       (List.toArray <$> GParser.sepBy1 term (trivia *> GParser.ch ',' <* trivia)
         <* trivia <* GParser.ch ')'))
 
-private
-def termParser
-    : GParser conditional Term :=
+private def termParser : GParser conditional Term :=
   GParser.fix fun (term : GParser conditional Term) => gdo
     let name ← token
     let arguments ← GParser.optional (argumentList term)
@@ -385,16 +345,12 @@ private def atomParser : GParser conditional Expr := gdo
   return value
   grade_by by decide
 
-private
-def variableList
-    : GParser conditional (Array String) :=
+private def variableList : GParser conditional (Array String) :=
   GParser.ch '[' *> trivia *>
     (List.toArray <$> GParser.sepBy1 token (trivia *> GParser.ch ',' <* trivia)
       <* trivia <* GParser.ch ']')
 
-private
-def formulaParser
-    : GParser conditional Expr :=
+private def formulaParser : GParser conditional Expr :=
   GParser.fix fun (formula : GParser conditional Expr) =>
     let unary : GParser conditional Expr :=
       GParser.fix fun unary =>

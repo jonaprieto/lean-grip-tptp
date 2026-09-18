@@ -8,7 +8,10 @@ import TPTP
 
 open TPTP
 
-private def checkFile (path : String) : IO Unit := do
+private
+def checkFile
+    (path : String)
+    : IO Unit := do
   let source ← IO.FS.readFile path
   match parseString source with
   | .ok _ => pure ()
@@ -24,7 +27,10 @@ def formulaError
   | .syntax error => error.pretty statement.formula.toUTF8
   | .wrongKind expected actual => s!"expected {expected}, found {actual}"
 
-private def checkTypedFile (path : String) : IO (Nat × Nat × Nat) := do
+private
+def checkTypedFile
+    (path : String)
+    : IO (Nat × Nat × Nat) := do
   let source ← IO.FS.readFile path
   let document ← match parseString source with
     | .ok value => pure value
@@ -71,7 +77,9 @@ private def checkTypedFile (path : String) : IO (Nat × Nat × Nat) := do
   | .ok _ => pure (fof, cnf, tff)
   | .error error => throw (IO.userError s!"{path}: TFF validation: {error}")
 
-def main (arguments : List String) : IO Unit := do
+def main
+    (arguments : List String)
+    : IO Unit := do
   let arguments := match arguments with
     | "--" :: rest => rest
     | rest => rest

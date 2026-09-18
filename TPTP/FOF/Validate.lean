@@ -47,14 +47,10 @@ def firstDuplicate
   | [] => none
   | name :: rest => if rest.contains name then some name else firstDuplicate rest
 
-private
-def definedPredicates
-    : List String :=
+private def definedPredicates : List String :=
   [ "$distinct", "$less", "$lesseq", "$greater", "$greatereq", "$is_int", "$is_rat" ]
 
-private
-def definedTerms
-    : List String :=
+private def definedTerms : List String :=
   [ "$uminus", "$sum", "$difference", "$product", "$quotient", "$quotient_e"
   , "$quotient_t", "$quotient_f", "$remainder_e", "$remainder_t", "$remainder_f"
   , "$floor", "$ceiling", "$truncate", "$round", "$to_int", "$to_rat", "$to_real" ]

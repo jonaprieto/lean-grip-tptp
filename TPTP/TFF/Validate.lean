@@ -191,8 +191,12 @@ def checkSame
           | none => .error (.invalidType s!"no common type in {context}")
       | none => .error (.invalidType s!"empty type list in {context}")
 
-private def checkArguments (name : String) (expected : Array TypeExpr)
-    (actual : Array TypeExpr) : Except ValidationError Unit := do
+private
+def checkArguments
+    (name : String)
+    (expected : Array TypeExpr)
+    (actual : Array TypeExpr)
+    : Except ValidationError Unit := do
   let expected := expected.map canonicalType
   let actual := actual.map canonicalType
   let _ ← checkArity name expected.size actual.size
@@ -278,16 +282,23 @@ def validDeclarationName
       else
         first.isLower || first == '\'' || first == Char.ofNat 96
 
-private def validateTypeBinders (variables : Array TypeBinder) :
-    Except ValidationError (List String) := do
+private
+def validateTypeBinders
+    (variables : Array TypeBinder)
+    : Except ValidationError (List String) := do
   if variables.isEmpty then throw .emptyBinder
   let names := typeVariableNames variables
   match firstDuplicate names with
   | some name => throw (.duplicateBinder name)
   | none => pure names
 
-private def validateMapping (signature : Signature) (typeVariables : List String)
-    (arguments : Array TypeExpr) (result : TypeExpr) : Except ValidationError Unit := do
+private
+def validateMapping
+    (signature : Signature)
+    (typeVariables : List String)
+    (arguments : Array TypeExpr)
+    (result : TypeExpr)
+    : Except ValidationError Unit := do
   if arguments.isEmpty then
     throw (.invalidType "a function, predicate, or type constructor needs an argument")
   if isKind result then
@@ -315,8 +326,11 @@ def validateMonotype
   | .product _ => .error (.invalidType "a product type must be part of a mapping")
   | .forall _ _ => .error (.invalidType "nested polymorphic type quantification is not TF1")
 
-private def validateSignatureType (signature : Signature) (declaration : Declaration) :
-    Except ValidationError Unit := do
+private
+def validateSignatureType
+    (signature : Signature)
+    (declaration : Declaration)
+    : Except ValidationError Unit := do
   if !validDeclarationName declaration.symbol then
     throw (.invalidType s!"invalid declaration symbol {declaration.symbol.raw}")
   match declaration.type with
@@ -325,14 +339,10 @@ private def validateSignatureType (signature : Signature) (declaration : Declara
       validateMonotype signature names body
   | type => validateMonotype signature [] type
 
-private
-def definedPredicates
-    : List String :=
+private def definedPredicates : List String :=
   [ "$distinct", "$less", "$lesseq", "$greater", "$greatereq", "$is_int", "$is_rat" ]
 
-private
-def definedTerms
-    : List String :=
+private def definedTerms : List String :=
   [ "$uminus", "$sum", "$difference", "$product", "$quotient", "$quotient_e"
   , "$quotient_t", "$quotient_f", "$remainder_e", "$remainder_t", "$remainder_f"
   , "$floor", "$ceiling", "$truncate", "$round", "$abs"
@@ -403,8 +413,13 @@ def applyMonotype
   | .product _ | .forall _ _ => .error (.invalidApplication name)
 
 -- partiality: defined-symbol checking participates in the mutually recursive validator.
-private partial def definedTermType (signature : Signature) (symbol : Symbol)
-    (arguments : Array TypeExpr) : Except ValidationError (TypeExpr × Signature) := do
+private
+partial
+def definedTermType
+    (signature : Signature)
+    (symbol : Symbol)
+    (arguments : Array TypeExpr)
+    : Except ValidationError (TypeExpr × Signature) := do
   let name := symbol.raw
   if !definedTerms.contains name then
     throw (.invalidDefinedUse name)
@@ -442,8 +457,13 @@ private partial def definedTermType (signature : Signature) (symbol : Symbol)
   | _ => throw (.invalidDefinedUse name)
 
 -- partiality: defined-symbol checking participates in the mutually recursive validator.
-private partial def definedPredicateType (signature : Signature) (symbol : Symbol)
-    (arguments : Array TypeExpr) : Except ValidationError (TypeExpr × Signature) := do
+private
+partial
+def definedPredicateType
+    (signature : Signature)
+    (symbol : Symbol)
+    (arguments : Array TypeExpr)
+    : Except ValidationError (TypeExpr × Signature) := do
   let name := symbol.raw
   if !definedPredicates.contains name then
     throw (.invalidDefinedUse name)
@@ -489,9 +509,16 @@ def checkTerms
       pure (#[type] ++ types, signature)
 
 -- partiality: declaration application calls back into the mutually recursive term checker.
-private partial def applyDeclared (signature : Signature) (typeVariables : List String)
-    (variables : List (String × TypeExpr)) (symbol : Symbol) (arguments : Array Term)
-    (defaultResult : TypeExpr) : Except ValidationError (TypeExpr × Signature) := do
+private
+partial
+def applyDeclared
+    (signature : Signature)
+    (typeVariables : List String)
+    (variables : List (String × TypeExpr))
+    (symbol : Symbol)
+    (arguments : Array Term)
+    (defaultResult : TypeExpr)
+    : Except ValidationError (TypeExpr × Signature) := do
   if symbol.raw.startsWith "$" && !symbol.raw.startsWith "$$" then
     throw (.invalidDefinedUse symbol.raw)
   match lookup signature symbol.raw with
@@ -589,9 +616,13 @@ def checkAtom
         throw (.typeMismatch "equality" leftType rightType)
       pure signature
 
-private def checkBinders (signature : Signature) (typeVariables : List String)
-    (termVariables : List (String × TypeExpr)) (variables : Array TypedVariable) :
-    Except ValidationError (List (String × TypeExpr) × List String) := do
+private
+def checkBinders
+    (signature : Signature)
+    (typeVariables : List String)
+    (termVariables : List (String × TypeExpr))
+    (variables : Array TypedVariable)
+    : Except ValidationError (List (String × TypeExpr) × List String) := do
   if variables.isEmpty then throw .emptyBinder
   let names := variables.toList.map TypedVariable.name
   match firstDuplicate names with
@@ -643,8 +674,10 @@ def checkFormula
       checkFormula signature (types ++ typeVariables) (terms ++ variables) body
 
 /-- Validate a TF0/TF1 declaration and return the updated signature. -/
-def validateDeclaration (signature : Signature) (declaration : Declaration) :
-    Except ValidationError Signature := do
+def validateDeclaration
+    (signature : Signature)
+    (declaration : Declaration)
+    : Except ValidationError Signature := do
   let signature := canonicalSignature signature
   let declaration := { declaration with type := canonicalType declaration.type }
   let _ ← validateSignatureType signature declaration
