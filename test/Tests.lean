@@ -16,14 +16,20 @@ def check
     :=
   if condition then pure () else throw (IO.userError message)
 
-private def documentSource : String :=
+private
+def documentSource
+    : String
+    :=
   "% a comment\n" ++
     "include('Axioms/foo.p', [a1, a2]).\n" ++
     "fof(ax, axiom, p(a)).\n" ++
     "tff(type, type, $int < $int, introduced(definition)).\n" ++
     "cnf(`Goal, conjecture, p(a) | ~q(a), inference(resolution, [status(thm)], [ax])).\n"
 
-private def checkDocument : IO Unit := do
+private
+def checkDocument
+    : IO Unit
+    := do
   let document ← match parseString documentSource with
     | .ok value => pure value
     | .error error => throw (IO.userError (error.pretty documentSource.toUTF8))
@@ -50,7 +56,10 @@ private def checkDocument : IO Unit := do
   | .error error =>
       throw (IO.userError (error.pretty "fof(datatype, type-datatype, p(a)).".toUTF8))
 
-private def checkFormula : IO Unit := do
+private
+def checkFormula
+    : IO Unit
+    := do
   let source := "! [X] : (p(X) => q(X))"
   let formula ← match Formula.parseFormulaString source with
     | .ok value => pure value
@@ -64,7 +73,10 @@ private def checkFormula : IO Unit := do
       | .error message => throw (IO.userError message)
   | _ => throw (IO.userError "formula AST shape")
 
-private def checkErrors : IO Unit := do
+private
+def checkErrors
+    : IO Unit
+    := do
   for source in ["fof(b,axiom,q", "fof(a,axiom,p).\nfof(b,axiom,q"] do
     match parseString source with
     | .ok _ => throw (IO.userError "incomplete document accepted")
@@ -85,7 +97,10 @@ private def checkErrors : IO Unit := do
   | .ok _ => throw (IO.userError "malformed formula accepted")
   | .error _ => pure ()
 
-private def checkComments : IO Unit := do
+private
+def checkComments
+    : IO Unit
+    := do
   let source := "fof(line, axiom, p(a) % ) , ignored\n, inference(foo, [status(thm)]))."
   let block := "fof(block, axiom, p(a) /* ) , ignored */ , inference(foo, [status(thm)]))."
   for input in [source, block] do
@@ -95,7 +110,10 @@ private def checkComments : IO Unit := do
           "comment-aware annotation split"
     | .error error => throw (IO.userError (error.pretty input.toUTF8))
 
-private def checkFOF : IO Unit := do
+private
+def checkFOF
+    : IO Unit
+    := do
   let source := "! [X] : (p(X) => q(X))"
   let formula ← match FOF.parseFormulaString source with
     | .ok value => pure value
@@ -164,7 +182,10 @@ private def checkFOF : IO Unit := do
   | .error (.invalidDefinedArity "$less" 0) => pure ()
   | _ => throw (IO.userError "FOF accepted a defined predicate without arguments")
 
-private def checkCNF : IO Unit := do
+private
+def checkCNF
+    : IO Unit
+    := do
   let source := "(p(a) | ~q(a) | r(a) != s(a))"
   let clause ← match CNF.parseFormulaString source with
     | .ok value => pure value
@@ -214,7 +235,10 @@ private def checkCNF : IO Unit := do
     | .ok _ => throw (IO.userError s!"CNF accepted `{input}`")
     | .error _ => pure ()
 
-private def checkTFF : IO Unit := do
+private
+def checkTFF
+    : IO Unit
+    := do
   let source := [
     "tff(human_type,type,human: $tType).",
     "tff(grade_type,type,grade: $tType).",
@@ -462,7 +486,9 @@ private def checkTFF : IO Unit := do
         (.application { raw := "list" } #[.atom { raw := "B_1" }, .atom { raw := "B" }]))
     "TF1 alpha renaming avoids free body names"
 
-def main : IO Unit := do
+def main
+    : IO Unit
+    := do
   checkDocument
   checkFormula
   checkErrors

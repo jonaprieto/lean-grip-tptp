@@ -28,10 +28,14 @@ def Clause.render
   else
     String.intercalate " | " (clause.literals.toList.map Literal.render)
 
-instance : ToString Literal where
+instance
+    : ToString Literal
+    where
   toString := Literal.render
 
-instance : ToString Clause where
+instance
+    : ToString Clause
+    where
   toString := Clause.render
 
 end TPTP.CNF

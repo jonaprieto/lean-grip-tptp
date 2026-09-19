@@ -37,7 +37,9 @@ def ValidationError.message
   | .invalidDefinedArity name actual => s!"invalid arity {actual} for TPTP symbol `{name}`"
   | .invalidTermApplication name => s!"numeric or distinct-object term `{name}` cannot be applied"
 
-instance : ToString ValidationError where
+instance
+    : ToString ValidationError
+    where
   toString := ValidationError.message
 
 private
@@ -47,10 +49,16 @@ def firstDuplicate
   | [] => none
   | name :: rest => if rest.contains name then some name else firstDuplicate rest
 
-private def definedPredicates : List String :=
+private
+def definedPredicates
+    : List String
+    :=
   [ "$distinct", "$less", "$lesseq", "$greater", "$greatereq", "$is_int", "$is_rat" ]
 
-private def definedTerms : List String :=
+private
+def definedTerms
+    : List String
+    :=
   [ "$uminus", "$sum", "$difference", "$product", "$quotient", "$quotient_e"
   , "$quotient_t", "$quotient_f", "$remainder_e", "$remainder_t", "$remainder_f"
   , "$floor", "$ceiling", "$truncate", "$round", "$to_int", "$to_rat", "$to_real" ]

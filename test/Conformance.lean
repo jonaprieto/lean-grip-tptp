@@ -28,7 +28,8 @@ private
 def checkFOF
     (accepted : Bool)
     (label source : String)
-    : IO Unit := do
+    : IO Unit
+    := do
   let result := FOF.parseFormulaString source
   if (isOk result == accepted) then
     match result with
@@ -47,7 +48,8 @@ private
 def checkCNF
     (accepted : Bool)
     (label source : String)
-    : IO Unit := do
+    : IO Unit
+    := do
   let result := CNF.parseFormulaString source
   if (isOk result == accepted) then
     match result with
@@ -152,7 +154,8 @@ private
 def checkTFFFormula
     (accepted : Bool)
     (label source : String)
-    : IO Unit := do
+    : IO Unit
+    := do
   let result := TFF.parseFormulaString source
   if (isOk result == accepted) then
     match result with
@@ -178,7 +181,8 @@ private
 def checkTFFDeclaration
     (accepted : Bool)
     (label source : String)
-    : IO Unit := do
+    : IO Unit
+    := do
   let result := TFF.parseTypeDeclarationString source
   match result with
   | .error error =>
@@ -243,7 +247,10 @@ private def tffDeclarationRejected : List (String × String) := [
   ("unknown result type", "f: $unknown > $int")
 ]
 
-private def checkTF1 : IO Unit := do
+private
+def checkTF1
+    : IO Unit
+    := do
   let sources := [
     "tff(list_type,type,list: $tType > $tType).",
     "tff(is_empty_type,type,is_empty: !>[A:$tType] : (list(A) > $o)).",
@@ -285,7 +292,10 @@ private def checkTF1 : IO Unit := do
   | .error _ => pure ()
   | .ok _ => throw (IO.userError "TF1 accepted a type constructor with the wrong arity")
 
-private def checkTFF : IO Unit := do
+private
+def checkTFF
+    : IO Unit
+    := do
   for (label, source) in tffFormulaAccepted do
     checkTFFFormula true label source
   for (label, source) in tffFormulaRejected do
@@ -316,7 +326,10 @@ private def checkTFF : IO Unit := do
   | .ok _ => throw (IO.userError "TFF accepted a conflicting default declaration")
   checkTF1
 
-private def checkValidation : IO Unit := do
+private
+def checkValidation
+    : IO Unit
+    := do
   let valid := FOF.Formula.atom
     (.predicate { raw := "$less" } #[.constant { raw := "a" }, .constant { raw := "b" }])
   match FOF.validate valid with
@@ -352,7 +365,9 @@ private def checkValidation : IO Unit := do
       | .ok () => throw (IO.userError "parsed numeric term application accepted")
   | .error error => throw (IO.userError (error.pretty "p(1(a))".toUTF8))
 
-def main : IO Unit := do
+def main
+    : IO Unit
+    := do
   for (label, source) in fofAccepted do
     checkFOF true label source
   for (label, source) in fofRejected do

@@ -8,7 +8,10 @@ import TPTP
 
 open TPTP
 
-private def source : String :=
+private
+def source
+    : String
+    :=
   "include('Axioms/foo.p').\n" ++
     "fof(goal, conjecture, ! [X] : (p(X) => q(X)),\n" ++
     "  inference(resolution, [status(thm)], [foo])).\n" ++
@@ -25,7 +28,8 @@ private def source : String :=
 private
 def printStatement
     (statement : Statement)
-    : IO Unit := do
+    : IO Unit
+    := do
   IO.println s!"{statement.kind} {statement.name}: {statement.formula}"
   match statement.kind with
   | .fof =>
@@ -50,7 +54,9 @@ def printStatement
       | .error (.wrongKind expected actual) => IO.println s!"  kind error: {expected} vs {actual}"
   | _ => IO.println "  typed parser: not enabled for this kind"
 
-def main : IO Unit := do
+def main
+    : IO Unit
+    := do
   IO.println "TPTP/TSTP parser demo"
   match parseString source with
   | .ok document =>

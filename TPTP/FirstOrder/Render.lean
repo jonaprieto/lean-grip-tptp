@@ -31,7 +31,9 @@ decreasing_by
       assumption)) ?_
   simp +arith
 
-instance : ToString Term where
+instance
+    : ToString Term
+    where
   toString := Term.render
 
 def Atom.render
@@ -45,7 +47,9 @@ def Atom.render
   | .equality left right => s!"{left.render} = {right.render}"
   | .inequality left right => s!"{left.render} != {right.render}"
 
-instance : ToString Atom where
+instance
+    : ToString Atom
+    where
   toString := Atom.render
 
 end TPTP.FirstOrder
