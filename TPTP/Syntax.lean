@@ -29,7 +29,9 @@ def Name.render
   | .bare value => value
   | .quoted raw => raw
 
-instance : ToString Name where
+instance
+    : ToString Name
+    where
   toString := Name.render
 
 inductive Kind where
@@ -64,7 +66,9 @@ def Kind.render
   | .tpi => "tpi"
   | .other value => value
 
-instance : ToString Kind where
+instance
+    : ToString Kind
+    where
   toString := Kind.render
 
 inductive Role where
@@ -132,7 +136,9 @@ def Role.render
   | .finitePredicate => "fi_predicates"
   | .other value => value
 
-instance : ToString Role where
+instance
+    : ToString Role
+    where
   toString := Role.render
 
 /-- A parsed `fof`, `cnf`, `tff`, `thf`, `tcf`, or `tpi` statement. -/

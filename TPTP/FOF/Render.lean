@@ -43,7 +43,9 @@ def Formula.render
     :=
   renderFormula formula
 
-instance : ToString Formula where
+instance
+    : ToString Formula
+    where
   toString := Formula.render
 
 end TPTP.FOF

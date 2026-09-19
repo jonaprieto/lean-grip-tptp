@@ -57,7 +57,9 @@ def TypeExpr.render
         | _ => body.render
       s!"!>[{String.intercalate ", " (variables.toList.map renderTypeBinder)}] : {body}"
 
-instance : ToString TypeExpr where
+instance
+    : ToString TypeExpr
+    where
   toString := TypeExpr.render
 
 private
@@ -110,7 +112,9 @@ decreasing_by
   all_goals simp_all [formulaDepth]
   all_goals omega
 
-instance : ToString Formula where
+instance
+    : ToString Formula
+    where
   toString := Formula.render
 
 def Declaration.render
@@ -119,7 +123,9 @@ def Declaration.render
     :=
   s!"{declaration.symbol.render}: {declaration.type.render}"
 
-instance : ToString Declaration where
+instance
+    : ToString Declaration
+    where
   toString := Declaration.render
 
 end TPTP.TFF

@@ -329,10 +329,14 @@ def renameBinderStep
         rw [depth_renameBound]
       · exact depth_binderFold replacementFree used variables (initial.push binder) body
 
-@[simp] private theorem depth_binderFold_array (replacementFree used : Array String)
-    (variables : Array TypeBinder) (body : TypeExpr) :
-    depth ((variables.foldl (renameBinderStep replacementFree used) (#[], body)).2) =
-      depth body := by
+@[simp]
+private
+theorem depth_binderFold_array
+    (replacementFree used : Array String)
+    (variables : Array TypeBinder)
+    (body : TypeExpr)
+    : depth ((variables.foldl (renameBinderStep replacementFree used) (#[], body)).2) = depth body
+    := by
   rw [← Array.foldl_toList]
   exact depth_binderFold replacementFree used variables.toList #[] body
 

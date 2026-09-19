@@ -11,7 +11,8 @@ open TPTP
 private
 def checkFile
     (path : String)
-    : IO Unit := do
+    : IO Unit
+    := do
   let source ← IO.FS.readFile path
   match parseString source with
   | .ok _ => pure ()
@@ -31,7 +32,8 @@ def formulaError
 private
 def checkTypedFile
     (path : String)
-    : IO (Nat × Nat × Nat) := do
+    : IO (Nat × Nat × Nat)
+    := do
   let source ← IO.FS.readFile path
   let document ← match parseString source with
     | .ok value => pure value
@@ -80,7 +82,8 @@ def checkTypedFile
 
 def main
     (arguments : List String)
-    : IO Unit := do
+    : IO Unit
+    := do
   let arguments := match arguments with
     | "--" :: rest => rest
     | rest => rest

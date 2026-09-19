@@ -24,7 +24,9 @@ def Symbol.render
     :=
   symbol.raw
 
-instance : ToString Symbol where
+instance
+    : ToString Symbol
+    where
   toString := Symbol.render
 
 inductive Term where

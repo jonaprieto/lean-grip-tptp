@@ -14,18 +14,21 @@ theorem quoted_name_render (value : String) : Name.render (.quoted value) = valu
 
 theorem known_kind_round_trip : (Kind.ofString "fof").render = "fof" := rfl
 
-theorem known_role_round_trip : (Role.ofString "negated_conjecture").render =
-    "negated_conjecture" := rfl
+theorem known_role_round_trip
+    : (Role.ofString "negated_conjecture").render = "negated_conjecture"
+    := rfl
 
 theorem empty_document_render : Document.render { items := #[] } = "" := rfl
 
-theorem invalid_utf8_document_rejected :
-    (parse ("fof(a,axiom,p".toUTF8 ++ ByteArray.mk #[255] ++ ").".toUTF8)).isOk = false :=
+theorem invalid_utf8_document_rejected
+    : (parse ("fof(a,axiom,p".toUTF8 ++ ByteArray.mk #[255] ++ ").".toUTF8)).isOk = false
+    :=
   by decide
 
-theorem fof_binary_render :
-    FOF.Formula.render (.implies (.atom (.predicate { raw := "p" } #[]))
-      (.atom (.predicate { raw := "q" } #[]))) = "(p => q)" := rfl
+theorem fof_binary_render
+    : FOF.Formula.render (.implies (.atom (.predicate { raw := "p" } #[]))
+      (.atom (.predicate { raw := "q" } #[]))) = "(p => q)"
+    := rfl
 
 theorem cnf_empty_render : CNF.Clause.render { literals := #[] } = "$false" := rfl
 
