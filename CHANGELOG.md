@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.9 — 2026-10-24
+
+- Refresh Grip to v0.4.1; repetition inlines its element parser, so large problem files parse
+  about 5% faster.
+- Lay out declarations one binder group per line.
+
 ## 0.5.8 — 2026-09-09
 
 - Reject invalid UTF-8 before capturing formula text.
