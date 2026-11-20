@@ -7,7 +7,7 @@ package «tptp» where
 
 require grip from git
   "https://github.com/jonaprieto/lean-grip.git"
-  @ "v0.4.1"
+  @ "v0.4.3"
 
 @[default_target]
 lean_lib «TPTP» where
