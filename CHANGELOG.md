@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.10 — 2026-11-20
+
+- Adopt Lean v4.36.0 and refresh Grip to v0.4.3.
+
 ## 0.5.9 — 2026-10-24
 
 - Refresh Grip to v0.4.1; repetition inlines its element parser, so large problem files parse
